@@ -33,7 +33,7 @@
     },
     {
       "id": "groceries_aldi",
-      "label_bg": "Хранителни стоки — Aldi",
+      "label_bg": "Aldi",
       "brand_note_bg": "Немска дискаунт верига — по-евтино, без брандове, отлично качество",
       "scaling": "variable",
       "grocery": true,
@@ -43,7 +43,7 @@
     },
     {
       "id": "groceries_woolworths",
-      "label_bg": "Хранителни стоки — Woolworths",
+      "label_bg": "Woolworths",
       "brand_note_bg": "Основната австралийска супермаркет верига — по-широк избор, по-високи цени",
       "scaling": "variable",
       "grocery": true,
@@ -76,6 +76,7 @@
       "id": "kids_pr",
       "label_bg": "Деца (учебни разходи)",
       "scaling": "variable",
+      "is_kids": true,
       "visa_type": "pr",
       "bg_eur": 430,
       "perth_aud": 269
@@ -84,6 +85,7 @@
       "id": "kids_482",
       "label_bg": "Деца (учебни разходи)",
       "scaling": "variable",
+      "is_kids": true,
       "visa_type": "482",
       "bg_eur": 430,
       "perth_aud": 702
@@ -113,6 +115,7 @@
       "id": "pets",
       "label_bg": "Домашни любимци",
       "scaling": "fixed",
+      "is_pets": true,
       "bg_eur": 50,
       "perth_aud": 103
     }
@@ -168,16 +171,16 @@
     },
     {
       "id": "school_fee",
-      "label_bg": "Такса за записване в училище (482 виза)",
+      "label_bg": "Такса за записване в училище",
       "aud": 285,
       "visa_type": "482"
     },
     {
-      "id": "insurance",
-      "label_bg": "Първа месечна вноска здравна застраховка",
+      "id": "ovhc",
+      "label_bg": "OVHC (здравна застраховка)",
       "aud": 420,
-      "all_visa": true,
-      "note_bg": "OVHC за виза 482 / PHI за постоянно пребиваване"
+      "visa_type": "482",
+      "note_bg": "Overseas Visitor Health Cover — задължителна за виза 482"
     }
   ]
 }

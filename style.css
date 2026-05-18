@@ -124,6 +124,42 @@ body {
   text-underline-offset: 2px;
 }
 
+/* ── Checkbox group (kids / pets) ───────────────────────── */
+.checkbox-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 9px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  user-select: none;
+}
+
+.checkbox-label:has(input:checked) {
+  border-color: var(--blue);
+  background: #e8f0fb;
+  color: var(--blue);
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--blue);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 /* ── Segment control (1/2/3/4+) ─────────────────────────── */
 .segment-control {
   display: flex;
@@ -303,43 +339,91 @@ body {
 
 .meta-chip strong { color: white; }
 
-/* ── Grocery selector ────────────────────────────────────── */
-.grocery-selector {
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  box-shadow: var(--shadow);
+/* ── Grocery sub-rows ────────────────────────────────────── */
+.grocery-parent-row { background: var(--bg) !important; }
+.grocery-parent-row:hover { background: var(--bg) !important; }
+
+.grocery-parent-cell {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--blue);
+  padding-top: 10px !important;
+  padding-bottom: 4px !important;
+}
+
+.grocery-sub-wrap { padding-left: 10px; }
+
+.grocery-sub-label {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
-.grocery-selector-label {
-  font-size: 0.85rem;
+.grocery-sub-name { font-weight: 500; }
+
+.groc-select-btn {
+  font-size: 0.72rem;
   font-weight: 600;
-  color: var(--text-muted);
-  margin-right: 4px;
-}
-
-.groc-btns { display: flex; gap: 0; border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
-
-.groc-btn {
-  padding: 7px 16px;
-  border: none;
-  background: none;
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--text-muted);
+  padding: 2px 9px;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  background: white;
+  color: var(--blue);
   cursor: pointer;
-  border-right: 1.5px solid var(--border);
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+  line-height: 1.6;
 }
 
-.groc-btn:last-child { border-right: none; }
-.groc-btn.active { background: var(--green); color: white; font-weight: 700; }
-.groc-btn:not(.active):hover { background: var(--bg); }
+.groc-select-btn:hover {
+  background: var(--blue);
+  color: white;
+  border-color: var(--blue);
+}
+
+/* ── Editable BG EUR cells ───────────────────────────────── */
+.td-bg-edit {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.bg-eur-sym {
+  font-size: 0.88em;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.bg-edit-input {
+  width: 64px;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: right;
+  padding: 1px 2px;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+  border-radius: 3px;
+  vertical-align: middle;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.bg-edit-input::-webkit-inner-spin-button,
+.bg-edit-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.bg-edit-input:hover {
+  border-color: var(--border);
+  background: white;
+  cursor: text;
+}
+
+.bg-edit-input:focus {
+  border-color: var(--blue);
+  background: white;
+  outline: none;
+}
 
 /* ── Budget table ────────────────────────────────────────── */
 .budget-table-wrap {
@@ -567,9 +651,14 @@ body {
 
   .no-print,
   .results-header,
-  .grocery-selector,
   .btn-back,
-  .btn-print { display: none !important; }
+  .btn-print,
+  .groc-select-btn { display: none !important; }
+
+  .bg-edit-input {
+    border: none !important;
+    background: transparent !important;
+  }
 
   body { background: white; font-size: 11pt; }
 
