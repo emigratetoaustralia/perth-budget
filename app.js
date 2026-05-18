@@ -88,7 +88,12 @@ function showInput() {
 
 // ── Scaling ──────────────────────────────────────────────────
 function scaleAud(cat) {
-  return scaleValue(cat.perth_aud, cat, 'aud');
+  const householdScaled = scaleValue(cat.perth_aud, cat, 'aud');
+  if (cat.scaling === 'variable' && state.bgOverrides[cat.id] !== undefined) {
+    const ratio = state.bgOverrides[cat.id] / cat.bg_eur;
+    return householdScaled * ratio;
+  }
+  return householdScaled;
 }
 
 function scaleBgEur(cat) {
@@ -340,18 +345,12 @@ function tdEditableBg(row, catId, value) {
     const newVal = parseFloat(e.target.value);
     if (!isNaN(newVal) && newVal >= 0) {
       state.bgOverrides[catId] = newVal;
-      refreshBgTotal();
+      renderResults();
     }
   });
   td.appendChild(sym);
   td.appendChild(input);
   row.appendChild(td);
-}
-
-function refreshBgTotal() {
-  const totals = calcTotals();
-  const cell = document.getElementById('bg-total-cell');
-  if (cell) cell.textContent = fmtEur(totals.bgEur);
 }
 
 // ── Floor callout ─────────────────────────────────────────────
