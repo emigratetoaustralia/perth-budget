@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Бюджет Пърт</title>
+  <meta name="description" content="Сравни разходите си в България и Пърт, Австралия">
+  <meta name="theme-color" content="#0252a3">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── INPUT SCREEN ─────────────────────────────────────── -->
+  <div id="screen-input" class="screen active">
+    <header class="app-header">
+      <div class="header-logo">
+        <span class="logo-mark">БП</span>
+      </div>
+      <div>
+        <h1>Бюджет Пърт</h1>
+        <p class="subtitle">Сравни разходите си в България и Пърт</p>
+      </div>
+    </header>
+
+    <main class="input-main">
+
+      <section class="field-group">
+        <label class="field-label">Брой хора в домакинството</label>
+        <div class="segment-control" id="ctrl-household">
+          <button class="seg-btn" data-value="1">1</button>
+          <button class="seg-btn" data-value="2">2</button>
+          <button class="seg-btn active" data-value="3">3</button>
+          <button class="seg-btn" data-value="4">4+</button>
+        </div>
+      </section>
+
+      <section class="field-group">
+        <label class="field-label">Жилище в Пърт</label>
+        <div class="toggle-control" id="ctrl-housing">
+          <button class="tog-btn active" data-value="renter">Наемател</button>
+          <button class="tog-btn" data-value="owner">Собственик / ипотека</button>
+        </div>
+      </section>
+
+      <section class="field-group">
+        <label class="field-label">Вид виза</label>
+        <div class="toggle-control" id="ctrl-visa">
+          <button class="tog-btn active" data-value="pr">Постоянно пребиваване</button>
+          <button class="tog-btn" data-value="482">Временна виза 482</button>
+        </div>
+        <p class="field-hint">Визи 189, 190, 491 → постоянно пребиваване. Спонсорирана 482 → временна виза.</p>
+      </section>
+
+      <section class="field-group">
+        <label class="field-label">Валутен курс <span class="optional-tag">по избор</span></label>
+        <div class="rate-row">
+          <span class="rate-label">1 AUD =</span>
+          <input type="number" id="input-rate" class="rate-input"
+                 placeholder="напр. 0.606" step="0.001" min="0.1" max="5"
+                 inputmode="decimal">
+          <span class="rate-label">EUR</span>
+        </div>
+        <p class="field-hint">
+          Остави празно — ще видиш резултатите само в AUD.
+          <a href="https://xe.com/currencyconverter/convert/?Amount=1&From=AUD&To=EUR"
+             target="_blank" rel="noopener noreferrer">Провери курса на xe.com →</a>
+        </p>
+      </section>
+
+      <button class="btn-primary" id="btn-calculate">
+        Изчисли бюджета →
+      </button>
+
+    </main>
+  </div>
+
+  <!-- ── RESULTS SCREEN ────────────────────────────────────── -->
+  <div id="screen-results" class="screen">
+    <header class="results-header no-print">
+      <button class="btn-back" id="btn-back">← Промени</button>
+      <span class="results-title">Бюджет Пърт</span>
+      <button class="btn-print" id="btn-print">🖨 PDF</button>
+    </header>
+
+    <main id="results-main" class="results-main">
+      <!-- Rendered by app.js -->
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+  </script>
+</body>
+</html>

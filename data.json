@@ -1,0 +1,183 @@
+{
+  "meta": {
+    "calibration_date": "2026-05",
+    "base_household_size": 3,
+    "exchange_rate_anchor": 1.65,
+    "calibration_note": "Базирано на реални данни от FY25/26",
+    "disclaimer": "Тази калкулация е ориентировъчна и се основава на реални разходи на българско семейство в Пърт, Западна Австралия. Стойностите са усреднени и може да се различават значително в зависимост от вашия начин на живот, местоположение в града и лични предпочитания. Курсът AUD/EUR е по-долу актуален към датата на калибриране — използвайте текущия курс за по-точни резултати. Материалът не е финансов съвет."
+  },
+
+  "categories": [
+    {
+      "id": "housing_renter",
+      "label_bg": "Жилище (наем)",
+      "scaling": "semi-fixed",
+      "housing_type": "renter",
+      "bg_eur": 950,
+      "perth_aud": 3042
+    },
+    {
+      "id": "housing_owner",
+      "label_bg": "Жилище (ипотека)",
+      "scaling": "semi-fixed",
+      "housing_type": "owner",
+      "bg_eur": 950,
+      "perth_aud": 2253
+    },
+    {
+      "id": "utilities",
+      "label_bg": "Комунални услуги",
+      "scaling": "semi-fixed",
+      "bg_eur": 220,
+      "perth_aud": 480
+    },
+    {
+      "id": "groceries_aldi",
+      "label_bg": "Хранителни стоки — Aldi",
+      "brand_note_bg": "Немска дискаунт верига — по-евтино, без брандове, отлично качество",
+      "scaling": "variable",
+      "grocery": true,
+      "grocery_option": "aldi",
+      "bg_eur": 600,
+      "perth_aud": 867
+    },
+    {
+      "id": "groceries_woolworths",
+      "label_bg": "Хранителни стоки — Woolworths",
+      "brand_note_bg": "Основната австралийска супермаркет верига — по-широк избор, по-високи цени",
+      "scaling": "variable",
+      "grocery": true,
+      "grocery_option": "woolworths",
+      "bg_eur": 600,
+      "perth_aud": 1192
+    },
+    {
+      "id": "dining",
+      "label_bg": "Заведения и развлечения",
+      "scaling": "variable",
+      "bg_eur": 350,
+      "perth_aud": 600
+    },
+    {
+      "id": "transport",
+      "label_bg": "Транспорт",
+      "scaling": "variable",
+      "bg_eur": 165,
+      "perth_aud": 430
+    },
+    {
+      "id": "health",
+      "label_bg": "Здраве и застраховки",
+      "scaling": "variable",
+      "bg_eur": 165,
+      "perth_aud": 480
+    },
+    {
+      "id": "kids_pr",
+      "label_bg": "Деца (учебни разходи)",
+      "scaling": "variable",
+      "visa_type": "pr",
+      "bg_eur": 430,
+      "perth_aud": 269
+    },
+    {
+      "id": "kids_482",
+      "label_bg": "Деца (учебни разходи)",
+      "scaling": "variable",
+      "visa_type": "482",
+      "bg_eur": 430,
+      "perth_aud": 702
+    },
+    {
+      "id": "fitness",
+      "label_bg": "Фитнес и лична грижа",
+      "scaling": "variable",
+      "bg_eur": 100,
+      "perth_aud": 208
+    },
+    {
+      "id": "entertainment",
+      "label_bg": "Забавления и абонаменти",
+      "scaling": "variable",
+      "bg_eur": 100,
+      "perth_aud": 383
+    },
+    {
+      "id": "retail",
+      "label_bg": "Облекло и покупки",
+      "scaling": "variable",
+      "bg_eur": 150,
+      "perth_aud": 396
+    },
+    {
+      "id": "pets",
+      "label_bg": "Домашни любимци",
+      "scaling": "fixed",
+      "bg_eur": 50,
+      "perth_aud": 103
+    }
+  ],
+
+  "scaling": {
+    "semi_fixed": {
+      "increment_aud_per_person": 150,
+      "increment_eur_per_person": 50,
+      "cap_persons": 5
+    }
+  },
+
+  "floor_costs": {
+    "1": { "aud": 3800 },
+    "2": { "aud": 5200 },
+    "3": { "aud": 6800 },
+    "4": { "aud": 8100 }
+  },
+
+  "setup_costs": [
+    {
+      "id": "bond",
+      "label_bg": "Гаранционен депозит (4 седмици наем)",
+      "aud": 2800,
+      "all_visa": true
+    },
+    {
+      "id": "advance",
+      "label_bg": "Наем предварително (2 седмици)",
+      "aud": 1400,
+      "all_visa": true
+    },
+    {
+      "id": "premium",
+      "label_bg": "Доплащане без местни препоръки",
+      "aud": 3500,
+      "all_visa": true,
+      "note_bg": "Нови имигранти рядко имат препоръки от местни наемодатели"
+    },
+    {
+      "id": "car",
+      "label_bg": "Кола втора употреба (клас Toyota Corolla)",
+      "aud": 6500,
+      "all_visa": true,
+      "note_bg": "Пърт е разпръснат град — колата е задължителна"
+    },
+    {
+      "id": "furniture",
+      "label_bg": "Мебели и бяла техника",
+      "aud": 2500,
+      "all_visa": true
+    },
+    {
+      "id": "school_fee",
+      "label_bg": "Такса за записване в училище (482 виза)",
+      "aud": 285,
+      "visa_type": "482"
+    },
+    {
+      "id": "insurance",
+      "label_bg": "Първа месечна вноска здравна застраховка",
+      "aud": 420,
+      "all_visa": true,
+      "note_bg": "OVHC за виза 482 / PHI за постоянно пребиваване"
+    }
+  ]
+}
