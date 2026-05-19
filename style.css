@@ -701,6 +701,130 @@ body {
   .floor-callout { border: 1pt solid #ccc; }
 }
 
+/* ── Housing Perth label ─────────────────────────────────── */
+.housing-perth-label {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+/* ── Kids subsection headers ─────────────────────────────── */
+.kids-subsection-header-row { background: var(--bg) !important; }
+.kids-subsection-header-row:hover { background: var(--bg) !important; }
+
+.kids-subsection-header-td {
+  padding: 6px 12px 3px !important;
+}
+
+.kids-subsection-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ── Kids add button ─────────────────────────────────────── */
+.kids-add-btn {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 9px;
+  border: 1.5px solid var(--green);
+  border-radius: 4px;
+  background: white;
+  color: var(--green);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  line-height: 1.6;
+}
+
+.kids-add-btn:hover {
+  background: var(--green);
+  color: white;
+}
+
+/* ── Kids remove button ──────────────────────────────────── */
+.kids-remove-btn {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  background: white;
+  color: var(--red);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1.6;
+  margin-left: auto;
+}
+
+.kids-remove-btn:hover {
+  background: var(--red);
+  color: white;
+  border-color: var(--red);
+}
+
+/* ── Kids BG toggle (Общинска / Частна) ──────────────────── */
+.kids-bg-toggle {
+  display: flex;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.kids-bg-btn {
+  padding: 1px 8px;
+  border: none;
+  background: none;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  border-right: 1.5px solid var(--border);
+  line-height: 1.6;
+}
+
+.kids-bg-btn:last-child { border-right: none; }
+
+.kids-bg-btn.active {
+  background: var(--blue);
+  color: white;
+  font-weight: 600;
+}
+
+/* ── Kindy Perth cell ────────────────────────────────────── */
+.kindy-perth-td {
+  text-align: right;
+  vertical-align: top;
+}
+
+/* ── CCS Notice box ──────────────────────────────────────── */
+.ccs-notice {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: var(--green-light);
+  border-left: 3px solid var(--green);
+  border-radius: var(--radius-sm);
+  font-size: 0.74rem;
+  color: #0a5c2e;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.ccs-notice a {
+  color: #0a5c2e;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+
 /* ── Responsive tweaks ───────────────────────────────────── */
 @media (max-width: 400px) {
   .tog-btn { font-size: 0.80rem; padding: 10px 4px; }

@@ -2,17 +2,21 @@
 
 // ── State ────────────────────────────────────────────────────
 const state = {
-  householdSize: 3,
-  housingType:   'renter',
-  visaType:      'pr',
-  eurPerAud:     null,
-  groceryChoice: 'aldi',
-  hasKids:       true,
-  hasPets:       true,
-  bgOverrides:   {},
+  householdSize:    3,
+  housingType:      'renter',
+  housingSubRent:   '2bed',   // '2bed' | '3bed'
+  housingSubOwner:  'apt',    // 'apt'  | 'house'
+  visaType:         'pr',
+  eurPerAud:        null,
+  groceryChoice:    'aldi',
+  hasKids:          true,
+  hasPets:          true,
+  kindyChildren:    [],       // [{bgType: 'municipal'|'private'}]
+  schoolChildren:   [],       // [{}]  one entry per school-age child
+  bgOverrides:      {},
 };
 
-let CFG = null; // loaded from data.json
+let CFG = null;
 
 // ── Boot ─────────────────────────────────────────────────────
 fetch('data.json')
@@ -28,9 +32,12 @@ fetch('data.json')
 
 // ── Input screen ─────────────────────────────────────────────
 function initInput() {
-  bindSegment('ctrl-household', v => { state.householdSize = v === '4' ? 4 : parseInt(v); });
-  bindToggle('ctrl-housing',    v => { state.housingType   = v; });
-  bindToggle('ctrl-visa',       v => { state.visaType      = v; });
+  bindSegment('ctrl-household', v => {
+    state.householdSize = v === '4' ? 4 : parseInt(v);
+    setDefaultHousingSub();
+  });
+  bindToggle('ctrl-housing', v => { state.housingType = v; });
+  bindToggle('ctrl-visa',    v => { state.visaType    = v; });
 
   document.getElementById('chk-kids').addEventListener('change', e => {
     state.hasKids = e.target.checked;
@@ -47,6 +54,12 @@ function initInput() {
   document.getElementById('btn-calculate').addEventListener('click', showResults);
   document.getElementById('btn-back').addEventListener('click', showInput);
   document.getElementById('btn-print').addEventListener('click', () => window.print());
+
+  setDefaultHousingSub();
+}
+
+function setDefaultHousingSub() {
+  state.housingSubRent = state.householdSize <= 2 ? '2bed' : '3bed';
 }
 
 function bindSegment(id, onChange) {
@@ -105,7 +118,7 @@ function scaleBgEur(cat) {
 
 function scaleValue(base, cat, currency) {
   const size  = Math.min(state.householdSize, 5);
-  const pivot = CFG.meta.base_household_size; // 3
+  const pivot = CFG.meta.base_household_size;
 
   switch (cat.scaling) {
     case 'fixed':
@@ -124,12 +137,16 @@ function scaleValue(base, cat, currency) {
   }
 }
 
+// ── Active housing sub-choice ─────────────────────────────────
+function activeHousingSub() {
+  return state.housingType === 'renter' ? state.housingSubRent : state.housingSubOwner;
+}
+
 // ── Visible categories for current state ─────────────────────
 function visibleCategories() {
   return CFG.categories.filter(cat => {
     if (cat.housing_type && cat.housing_type !== state.housingType) return false;
     if (cat.visa_type    && cat.visa_type    !== state.visaType)    return false;
-    if (cat.is_kids && (!state.hasKids || state.householdSize === 1)) return false;
     if (cat.is_pets && !state.hasPets) return false;
     return true;
   });
@@ -161,13 +178,70 @@ function renderResults() {
   container.appendChild(buildSetupSection());
   container.appendChild(buildFooter());
 
-  // Wire grocery select buttons inside table
+  // Wire grocery select buttons
   container.querySelectorAll('.groc-select-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       state.groceryChoice = btn.dataset.grocery;
       renderResults();
     });
   });
+
+  // Wire housing select buttons
+  container.querySelectorAll('.housing-select-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (state.housingType === 'renter') {
+        state.housingSubRent = btn.dataset.sub;
+      } else {
+        state.housingSubOwner = btn.dataset.sub;
+      }
+      renderResults();
+    });
+  });
+
+  // Wire kindy bgType toggles
+  container.querySelectorAll('.kindy-bg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      state.kindyChildren[idx].bgType = btn.dataset.bgtype;
+      renderResults();
+    });
+  });
+
+  // Wire kindy remove buttons
+  container.querySelectorAll('.kindy-remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      state.kindyChildren.splice(idx, 1);
+      renderResults();
+    });
+  });
+
+  // Wire kindy add button
+  const addKindy = container.querySelector('#btn-add-kindy');
+  if (addKindy) {
+    addKindy.addEventListener('click', () => {
+      state.kindyChildren.push({ bgType: 'municipal' });
+      renderResults();
+    });
+  }
+
+  // Wire school remove buttons
+  container.querySelectorAll('.school-remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      state.schoolChildren.splice(idx, 1);
+      renderResults();
+    });
+  });
+
+  // Wire school add button
+  const addSchool = container.querySelector('#btn-add-school');
+  if (addSchool) {
+    addSchool.addEventListener('click', () => {
+      state.schoolChildren.push({});
+      renderResults();
+    });
+  }
 }
 
 // ── Meta bar ──────────────────────────────────────────────────
@@ -208,14 +282,74 @@ function buildBudgetTable() {
   thead.appendChild(hr);
   table.appendChild(thead);
 
-  // tbody
   const tbody = el('tbody');
   const cats  = visibleCategories();
   let totBg = 0, totAud = 0;
 
-  // Non-grocery categories
+  // ── Housing sub-rows ──────────────────────────────────────
+  const housingCats = cats.filter(c => c.housing_type);
+  if (housingCats.length > 0) {
+    const activeSub = activeHousingSub();
+    const hsParentRow = el('tr', 'grocery-parent-row');
+    const hsParentTd  = el('td', 'grocery-parent-cell');
+    hsParentTd.setAttribute('colspan', String(cols));
+    hsParentTd.textContent = state.housingType === 'renter' ? 'Жилище (наем)' : 'Жилище (ипотека)';
+    hsParentRow.appendChild(hsParentTd);
+    tbody.appendChild(hsParentRow);
+
+    housingCats.forEach(cat => {
+      const isActive = cat.housing_sub === activeSub;
+      const bgEur    = scaleBgEur(cat);
+      const pAud     = scaleAud(cat);
+      const pEur     = audToEur(pAud);
+
+      if (isActive) {
+        totBg  += bgEur;
+        totAud += pAud;
+      }
+
+      const tr = el('tr', isActive ? 'row-grocery-active' : 'row-grocery-alt');
+
+      const catTd   = el('td');
+      const subWrap = el('div', 'grocery-sub-wrap');
+      const labelRow = el('div', 'grocery-sub-label');
+
+      const nameSpan = el('span', 'grocery-sub-name');
+      nameSpan.textContent = cat.label_bg;
+      labelRow.appendChild(nameSpan);
+
+      if (cat.label_perth) {
+        const perthSpan = el('span', 'housing-perth-label');
+        perthSpan.textContent = '→ ' + cat.label_perth;
+        labelRow.appendChild(perthSpan);
+      }
+
+      if (!isActive) {
+        const selBtn = el('button', 'groc-select-btn housing-select-btn');
+        selBtn.dataset.sub = cat.housing_sub;
+        selBtn.textContent = 'Избери';
+        labelRow.appendChild(selBtn);
+      }
+
+      subWrap.appendChild(labelRow);
+
+      const noteDiv = el('div', 'cat-note');
+      noteDiv.textContent = (cat.note_bg || '') + (cat.note_perth ? ' · Пърт: ' + cat.note_perth : '');
+      subWrap.appendChild(noteDiv);
+
+      catTd.appendChild(subWrap);
+      tr.appendChild(catTd);
+
+      tdEditableBg(tr, cat.id, bgEur);
+      tdVal(tr, fmtAud(pAud));
+      if (hasEur) tdVal(tr, pEur ? fmtEur(pEur) : '—');
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ── Non-housing, non-grocery, non-kids categories ─────────
   cats.forEach(cat => {
-    if (cat.grocery) return;
+    if (cat.grocery || cat.housing_type || cat.is_pets) return;
 
     const bgEur = scaleBgEur(cat);
     const pAud  = scaleAud(cat);
@@ -224,15 +358,16 @@ function buildBudgetTable() {
     totBg  += bgEur;
     totAud += pAud;
 
+    const combinedNote = buildCombinedNote(cat);
     const tr = el('tr');
-    tdCat(tr, cat.label_bg, null);
+    tdCat(tr, cat.label_bg, combinedNote);
     tdEditableBg(tr, cat.id, bgEur);
     tdVal(tr, fmtAud(pAud));
     if (hasEur) tdVal(tr, pEur ? fmtEur(pEur) : '—');
     tbody.appendChild(tr);
   });
 
-  // Grocery section — parent header + sub-rows
+  // ── Grocery section ───────────────────────────────────────
   const groceries = cats.filter(c => c.grocery);
   if (groceries.length > 0) {
     const headerRow = el('tr', 'grocery-parent-row');
@@ -255,7 +390,6 @@ function buildBudgetTable() {
 
       const tr = el('tr', isActive ? 'row-grocery-active' : 'row-grocery-alt');
 
-      // Category cell with sub-item indent and optional Select button
       const catTd    = el('td');
       const subWrap  = el('div', 'grocery-sub-wrap');
       const labelRow = el('div', 'grocery-sub-label');
@@ -273,7 +407,7 @@ function buildBudgetTable() {
 
       subWrap.appendChild(labelRow);
       const noteDiv = el('div', 'cat-note');
-      noteDiv.textContent = cat.brand_note_bg;
+      noteDiv.textContent = buildCombinedNote(cat);
       subWrap.appendChild(noteDiv);
       catTd.appendChild(subWrap);
       tr.appendChild(catTd);
@@ -284,6 +418,242 @@ function buildBudgetTable() {
       tbody.appendChild(tr);
     });
   }
+
+  // ── Kids section ──────────────────────────────────────────
+  if (state.hasKids && state.householdSize > 1) {
+    const kc = CFG.kids_config;
+
+    // Kids section header
+    const kidsHeaderRow = el('tr', 'grocery-parent-row');
+    const kidsHeaderTd  = el('td', 'grocery-parent-cell');
+    kidsHeaderTd.setAttribute('colspan', String(cols));
+    kidsHeaderTd.textContent = 'Деца';
+    kidsHeaderRow.appendChild(kidsHeaderTd);
+    tbody.appendChild(kidsHeaderRow);
+
+    // ── Kindy sub-section ──────────────────────────────
+    const kindySectionRow = el('tr', 'kids-subsection-header-row');
+    const kindySectionTd  = el('td');
+    kindySectionTd.setAttribute('colspan', String(cols));
+    kindySectionTd.className = 'kids-subsection-header-td';
+
+    const kindyHeaderDiv = el('div', 'kids-subsection-header');
+    kindyHeaderDiv.textContent = 'Детска градина (0–5 г.)';
+    const addKindyBtn = el('button', 'kids-add-btn');
+    addKindyBtn.id = 'btn-add-kindy';
+    addKindyBtn.textContent = '+ Добави дете';
+    kindyHeaderDiv.appendChild(addKindyBtn);
+    kindySectionTd.appendChild(kindyHeaderDiv);
+    kindySectionRow.appendChild(kindySectionTd);
+    tbody.appendChild(kindySectionRow);
+
+    state.kindyChildren.forEach((child, idx) => {
+      const isMunicipal = child.bgType === 'municipal';
+      const bgEur = isMunicipal ? kc.kindy.bg_municipal_eur : kc.kindy.bg_private_eur;
+      const pAud  = kc.kindy.perth_aud;
+      const pEur  = audToEur(pAud);
+
+      totBg  += bgEur;
+      totAud += pAud;
+
+      const tr = el('tr', 'row-grocery-active');
+
+      // Category cell with BG toggle and remove button
+      const catTd   = el('td');
+      const subWrap = el('div', 'grocery-sub-wrap');
+
+      const labelRow = el('div', 'grocery-sub-label');
+      const nameSpan = el('span', 'grocery-sub-name');
+      nameSpan.textContent = `Дете ${idx + 1}`;
+      labelRow.appendChild(nameSpan);
+
+      // BG toggle: Общинска / Частна
+      const bgToggle = el('div', 'kids-bg-toggle');
+      const munBtn = el('button', 'kids-bg-btn' + (isMunicipal ? ' active' : ''));
+      munBtn.dataset.idx    = idx;
+      munBtn.dataset.bgtype = 'municipal';
+      munBtn.textContent = 'Общинска';
+      const privBtn = el('button', 'kids-bg-btn' + (!isMunicipal ? ' active' : ''));
+      privBtn.dataset.idx    = idx;
+      privBtn.dataset.bgtype = 'private';
+      privBtn.textContent = 'Частна';
+      bgToggle.appendChild(munBtn);
+      bgToggle.appendChild(privBtn);
+      labelRow.appendChild(bgToggle);
+
+      // Remove button
+      const removeBtn = el('button', 'kids-remove-btn kindy-remove-btn');
+      removeBtn.dataset.idx = idx;
+      removeBtn.textContent = '×';
+      removeBtn.title = 'Премахни';
+      labelRow.appendChild(removeBtn);
+
+      subWrap.appendChild(labelRow);
+
+      // BG note
+      const bgNoteDiv = el('div', 'cat-note');
+      bgNoteDiv.textContent = isMunicipal ? kc.kindy.note_bg_municipal : kc.kindy.note_bg_private;
+      subWrap.appendChild(bgNoteDiv);
+
+      catTd.appendChild(subWrap);
+      tr.appendChild(catTd);
+
+      // BG EUR editable cell (manual key per child)
+      const bgOverrideKey = 'kindy_' + idx;
+      const bgVal = state.bgOverrides[bgOverrideKey] !== undefined
+        ? state.bgOverrides[bgOverrideKey]
+        : bgEur;
+      const bgTd = el('td', 'td-bg-edit');
+      const sym = document.createElement('span');
+      sym.className = 'bg-eur-sym';
+      sym.textContent = '€';
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.className = 'bg-edit-input';
+      inp.value = Math.round(bgVal);
+      inp.min = '0';
+      inp.step = '1';
+      inp.title = 'Редактирай разхода в България';
+      inp.addEventListener('change', e => {
+        const newVal = parseFloat(e.target.value);
+        if (!isNaN(newVal) && newVal >= 0) {
+          state.bgOverrides[bgOverrideKey] = newVal;
+          renderResults();
+        }
+      });
+      bgTd.appendChild(sym);
+      bgTd.appendChild(inp);
+      tr.appendChild(bgTd);
+
+      // Perth AUD cell with CCS notice
+      const audTd = el('td', 'kindy-perth-td');
+      const audSpan = el('span');
+      audSpan.textContent = fmtAud(pAud);
+      audTd.appendChild(audSpan);
+
+      const ccsBox = el('div', 'ccs-notice');
+      ccsBox.innerHTML = `⚠️ Тази сума е ПРЕДИ държавната субсидия (CCS). Реалният разход за семейство с медианен доход (~$130 000/год.) е $600–$900/мес. след субсидия. Използвайте официалния калкулатор: <a href="https://www.servicesaustralia.gov.au/child-care-subsidy-calculator" target="_blank" rel="noopener noreferrer">servicesaustralia.gov.au/childcarecalculator</a>`;
+      audTd.appendChild(ccsBox);
+
+      // Perth note
+      const perthNoteDiv = el('div', 'cat-note');
+      perthNoteDiv.textContent = 'Пърт: ' + kc.kindy.note_perth;
+      audTd.appendChild(perthNoteDiv);
+
+      tr.appendChild(audTd);
+
+      if (hasEur) tdVal(tr, pEur ? fmtEur(pEur) : '—');
+      tbody.appendChild(tr);
+    });
+
+    // ── School sub-section ─────────────────────────────
+    const schoolSectionRow = el('tr', 'kids-subsection-header-row');
+    const schoolSectionTd  = el('td');
+    schoolSectionTd.setAttribute('colspan', String(cols));
+    schoolSectionTd.className = 'kids-subsection-header-td';
+
+    const schoolHeaderDiv = el('div', 'kids-subsection-header');
+    schoolHeaderDiv.textContent = 'Училищна възраст (6–17 г.)';
+    const addSchoolBtn = el('button', 'kids-add-btn');
+    addSchoolBtn.id = 'btn-add-school';
+    addSchoolBtn.textContent = '+ Добави дете';
+    schoolHeaderDiv.appendChild(addSchoolBtn);
+    schoolSectionTd.appendChild(schoolHeaderDiv);
+    schoolSectionRow.appendChild(schoolSectionTd);
+    tbody.appendChild(schoolSectionRow);
+
+    state.schoolChildren.forEach((child, idx) => {
+      const isPr  = state.visaType === 'pr';
+      const bgEur = kc.school.bg_eur;
+      const pAud  = isPr ? kc.school.perth_aud_pr : kc.school.perth_aud_482;
+      const pEur  = audToEur(pAud);
+
+      totBg  += bgEur;
+      totAud += pAud;
+
+      const tr = el('tr', 'row-grocery-active');
+
+      const catTd   = el('td');
+      const subWrap = el('div', 'grocery-sub-wrap');
+      const labelRow = el('div', 'grocery-sub-label');
+
+      const nameSpan = el('span', 'grocery-sub-name');
+      nameSpan.textContent = `Дете ${idx + 1}`;
+      labelRow.appendChild(nameSpan);
+
+      if (!isPr) {
+        const visaTag = el('span', 'visa-tag');
+        visaTag.textContent = '482';
+        labelRow.appendChild(visaTag);
+      }
+
+      const removeBtn = el('button', 'kids-remove-btn school-remove-btn');
+      removeBtn.dataset.idx = idx;
+      removeBtn.textContent = '×';
+      removeBtn.title = 'Премахни';
+      labelRow.appendChild(removeBtn);
+
+      subWrap.appendChild(labelRow);
+
+      const noteDiv = el('div', 'cat-note');
+      const bgNote    = kc.school.note_bg;
+      const perthNote = isPr ? kc.school.note_perth_pr : kc.school.note_perth_482;
+      noteDiv.textContent = bgNote + ' · Пърт: ' + perthNote;
+      subWrap.appendChild(noteDiv);
+
+      catTd.appendChild(subWrap);
+      tr.appendChild(catTd);
+
+      const bgOverrideKey = 'school_' + idx;
+      const bgVal = state.bgOverrides[bgOverrideKey] !== undefined
+        ? state.bgOverrides[bgOverrideKey]
+        : bgEur;
+      const bgTd = el('td', 'td-bg-edit');
+      const sym2 = document.createElement('span');
+      sym2.className = 'bg-eur-sym';
+      sym2.textContent = '€';
+      const inp2 = document.createElement('input');
+      inp2.type = 'number';
+      inp2.className = 'bg-edit-input';
+      inp2.value = Math.round(bgVal);
+      inp2.min = '0';
+      inp2.step = '1';
+      inp2.title = 'Редактирай разхода в България';
+      inp2.addEventListener('change', e => {
+        const newVal = parseFloat(e.target.value);
+        if (!isNaN(newVal) && newVal >= 0) {
+          state.bgOverrides[bgOverrideKey] = newVal;
+          renderResults();
+        }
+      });
+      bgTd.appendChild(sym2);
+      bgTd.appendChild(inp2);
+      tr.appendChild(bgTd);
+
+      tdVal(tr, fmtAud(pAud));
+      if (hasEur) tdVal(tr, pEur ? fmtEur(pEur) : '—');
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ── Pets ──────────────────────────────────────────────────
+  const petsCats = cats.filter(c => c.is_pets);
+  petsCats.forEach(cat => {
+    const bgEur = scaleBgEur(cat);
+    const pAud  = scaleAud(cat);
+    const pEur  = audToEur(pAud);
+
+    totBg  += bgEur;
+    totAud += pAud;
+
+    const combinedNote = buildCombinedNote(cat);
+    const tr = el('tr');
+    tdCat(tr, cat.label_bg, combinedNote);
+    tdEditableBg(tr, cat.id, bgEur);
+    tdVal(tr, fmtAud(pAud));
+    if (hasEur) tdVal(tr, pEur ? fmtEur(pEur) : '—');
+    tbody.appendChild(tr);
+  });
 
   table.appendChild(tbody);
 
@@ -318,13 +688,41 @@ function buildBudgetTable() {
   return wrap;
 }
 
+function buildCombinedNote(cat) {
+  const parts = [];
+  if (cat.note_bg)    parts.push(cat.note_bg);
+  if (cat.note_perth) parts.push('Пърт: ' + cat.note_perth);
+  return parts.join(' · ');
+}
+
 function calcTotals() {
   let bgEur = 0, perthAud = 0;
-  visibleCategories().forEach(cat => {
+  const cats = visibleCategories();
+
+  cats.forEach(cat => {
     if (cat.grocery && cat.grocery_option !== state.groceryChoice) return;
+    if (cat.housing_type && cat.housing_sub !== activeHousingSub()) return;
+    if (cat.is_pets) {
+      bgEur    += scaleBgEur(cat);
+      perthAud += scaleAud(cat);
+      return;
+    }
     bgEur    += scaleBgEur(cat);
     perthAud += scaleAud(cat);
   });
+
+  if (state.hasKids && state.householdSize > 1) {
+    const kc = CFG.kids_config;
+    state.kindyChildren.forEach(child => {
+      bgEur    += child.bgType === 'municipal' ? kc.kindy.bg_municipal_eur : kc.kindy.bg_private_eur;
+      perthAud += kc.kindy.perth_aud;
+    });
+    state.schoolChildren.forEach(() => {
+      bgEur    += kc.school.bg_eur;
+      perthAud += state.visaType === 'pr' ? kc.school.perth_aud_pr : kc.school.perth_aud_482;
+    });
+  }
+
   return { bgEur, perthAud };
 }
 
@@ -363,15 +761,11 @@ function buildFloorCallout(perthAud) {
 
   if (perthAud >= floor) {
     div.innerHTML = `
-      <strong>✓ Над минималния праг за Пърт</strong>
-      Изчисленият бюджет от ${fmtAud(perthAud)}/мес надвишава реалистичния минимум от
-      ${fmtAud(floor)}/мес за домакинство от ${sizeLabel} души.
+      <strong>✓ Реалистичен бюджет — изчисленият разход надвишава препоръчителния минимум от ${fmtAud(floor)}/мес. за домакинство от ${sizeLabel} души в Пърт.</strong>
     `;
   } else {
     div.innerHTML = `
-      <strong>⚠ Под минималния праг за Пърт</strong>
-      Минималният реалистичен бюджет за домакинство от ${sizeLabel} души в Пърт е
-      ${fmtAud(floor)}/мес. Разгледай категориите внимателно.
+      <strong>⚠️ Изчисленият бюджет е под препоръчителния минимум от ${fmtAud(floor)}/мес. за домакинство от ${sizeLabel} души. Проверете дали сте включили всички разходи.</strong>
     `;
   }
   return div;
