@@ -60,6 +60,12 @@ function initInput() {
   document.getElementById('btn-print').addEventListener('click', () => window.print());
 
   setDefaultHousingSub();
+
+  // IMP-002: inject version from data.json into input header
+  const versionSpan = document.getElementById('app-version');
+  if (versionSpan && CFG.meta.version) {
+    versionSpan.textContent = 'v' + CFG.meta.version;
+  }
 }
 
 function setDefaultHousingSub() {
@@ -188,8 +194,10 @@ function renderResults() {
   const setupPanel = el('div', 'results-tab-panel' + (state.activeResultsTab === 'setup' ? ' active' : ''));
   setupPanel.id = 'panel-setup';
   setupPanel.appendChild(buildSetupSection());
-  setupPanel.appendChild(buildFooter());
   container.appendChild(setupPanel);
+
+  // Footer visible below both tabs
+  container.appendChild(buildFooter());
 
   // Sticky total bar (monthly tab only)
   buildStickyTotal(container);

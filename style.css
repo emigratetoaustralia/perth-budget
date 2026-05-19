@@ -66,6 +66,13 @@ body {
   letter-spacing: -0.3px;
 }
 
+.app-version {
+  font-size: 0.7em;
+  font-weight: 400;
+  opacity: 0.7;
+  letter-spacing: 0;
+}
+
 .subtitle {
   font-size: 0.82rem;
   opacity: 0.8;
