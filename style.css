@@ -167,7 +167,7 @@ body {
   flex-shrink: 0;
 }
 
-/* ── Segment control (1/2/3/4+) ─────────────────────────── */
+/* ── Segment control (1/2/3/4) ──────────────────────────── */
 .segment-control {
   display: flex;
   border: 1.5px solid var(--border);
@@ -453,6 +453,12 @@ body {
 .acc-num-bg   { color: var(--text-muted); }
 .acc-num-perth { color: var(--blue); }
 
+.acc-num-flag {
+  font-size: 0.7em;
+  opacity: 0.7;
+  margin-right: 4px;
+}
+
 .accordion-chevron {
   font-style: normal;
   font-size: 0.75rem;
@@ -619,7 +625,7 @@ body {
   margin-bottom: 3px;
 }
 
-/* ── Sub-toggle inside accordion (housing / grocery) ─────── */
+/* ── Sub-toggle inside accordion (housing / grocery / transport) ── */
 .acc-sub-toggle {
   display: flex;
   border: 1.5px solid var(--border);
@@ -809,6 +815,12 @@ body {
   font-weight: 600;
 }
 
+/* ── CCS gross/net toggle inside kindy block ────────────── */
+.ccs-toggle {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
 /* ── Sticky total bar ────────────────────────────────────── */
 .sticky-total {
   position: fixed;
@@ -849,6 +861,7 @@ body {
   font-size: 1.1rem;
   font-weight: 800;
   line-height: 1.15;
+  text-align: right;
 }
 
 .sticky-total-divider {

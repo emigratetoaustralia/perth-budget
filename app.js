@@ -9,9 +9,10 @@ const state = {
   visaType:         'pr',
   eurPerAud:        null,
   groceryChoice:    'aldi',
+  transportChoice:  '1car',   // '1car' | '2cars'
   hasKids:          true,
   hasPets:          true,
-  kindyChildren:    [],       // [{bgType: 'municipal'|'private'}]
+  kindyChildren:    [],       // [{bgType: 'municipal'|'private', ccsView: 'gross'|'net'}]
   schoolChildren:   [],       // [{}]  one entry per school-age child
   bgOverrides:      {},
   activeResultsTab: 'monthly',  // 'monthly' | 'setup'
@@ -37,7 +38,7 @@ fetch('data.json')
 // ── Input screen ─────────────────────────────────────────────
 function initInput() {
   bindSegment('ctrl-household', v => {
-    state.householdSize = v === '4' ? 4 : parseInt(v);
+    state.householdSize = parseInt(v);
     setDefaultHousingSub();
   });
   bindToggle('ctrl-housing', v => { state.housingType = v; });
@@ -130,7 +131,7 @@ function scaleBgEur(cat) {
 }
 
 function scaleValue(base, cat, currency) {
-  const size  = Math.min(state.householdSize, 5);
+  const size  = state.householdSize;
   const pivot = CFG.meta.base_household_size;
 
   switch (cat.scaling) {
@@ -214,7 +215,7 @@ function renderResults() {
 
 // ── Meta bar (compressed) ─────────────────────────────────────
 function buildMeta() {
-  const sizeLabel = state.householdSize === 4 ? '4+' : state.householdSize;
+  const sizeLabel = state.householdSize;
   const visaLabel = state.visaType === 'pr' ? 'PR' : '482';
   const hsLabel   = state.housingType === 'renter' ? 'Наем' : 'Ипотека';
   const rateLabel = state.eurPerAud ? `${state.eurPerAud}` : '—';
@@ -255,11 +256,17 @@ function buildAccordionList() {
     wrapper.appendChild(buildHousingSection(housingCats));
   }
 
-  // Standard rows (non-housing, non-grocery, non-pets)
+  // Standard rows (non-housing, non-grocery, non-pets, non-transport)
   cats.forEach(cat => {
-    if (cat.grocery || cat.housing_type || cat.is_pets) return;
+    if (cat.grocery || cat.housing_type || cat.is_pets || cat.transport) return;
     wrapper.appendChild(buildStandardSection(cat));
   });
+
+  // Transport
+  const transportCats = cats.filter(c => c.transport);
+  if (transportCats.length > 0) {
+    wrapper.appendChild(buildTransportSection(transportCats));
+  }
 
   // Groceries
   const groceries = cats.filter(c => c.grocery);
@@ -296,8 +303,8 @@ function buildAccordionItem(id, label, summaryBg, summaryPerth, bodyFn) {
 
   const summary = el('span', 'accordion-summary');
   summary.innerHTML = `
-    <span class="acc-num acc-num-bg">${summaryBg}</span>
-    <span class="acc-num acc-num-perth">${summaryPerth}</span>
+    <span class="acc-num acc-num-bg"><small class="acc-num-flag">🇧🇬</small>${summaryBg}</span>
+    <span class="acc-num acc-num-perth"><small class="acc-num-flag">🇦🇺</small>${summaryPerth}</span>
   `;
 
   const chevron = el('i', 'accordion-chevron');
@@ -414,6 +421,39 @@ function buildGrocerySection(groceries) {
   );
 }
 
+// ── Transport section ────────────────────────────────────────
+function buildTransportSection(transportCats) {
+  const activeCat = transportCats.find(c => c.transport_option === state.transportChoice) || transportCats[0];
+  const bgEur     = scaleBgEur(activeCat);
+  const pAud      = scaleAud(activeCat);
+
+  return buildAccordionItem(
+    'transport',
+    'Транспорт',
+    fmtEur(bgEur),
+    fmtAud(pAud),
+    body => {
+      const toggle = el('div', 'acc-sub-toggle');
+      transportCats.forEach(cat => {
+        const btn = el('button', 'acc-sub-btn' + (cat.transport_option === state.transportChoice ? ' active' : ''));
+        btn.dataset.subType = 'transport';
+        btn.dataset.transport = cat.transport_option;
+        btn.setAttribute('type', 'button');
+        btn.textContent = cat.label_bg;
+        toggle.appendChild(btn);
+      });
+      body.appendChild(toggle);
+
+      body.appendChild(buildNumBlock('transport', bgEur, pAud, activeCat));
+
+      if (activeCat.note_bg || activeCat.note_perth) {
+        body.appendChild(buildInfoToggle('transport'));
+        body.appendChild(buildInfoPanel('transport', activeCat.note_bg, activeCat.note_perth));
+      }
+    }
+  );
+}
+
 // ── Kids section ──────────────────────────────────────────────
 function buildKidsSection() {
   const kc = CFG.kids_config;
@@ -445,10 +485,16 @@ function buildKidsSection() {
 
       state.kindyChildren.forEach((child, idx) => {
         const isMunicipal = child.bgType === 'municipal';
+        const is482 = state.visaType === '482';
+        // Default ccsView on first render: gross for 482, net for PR
+        if (!child.ccsView) child.ccsView = is482 ? 'gross' : 'net';
+        // 482 always sees gross regardless of stored state
+        const effectiveCcsView = is482 ? 'gross' : child.ccsView;
+
         const bgEur = state.bgOverrides['kindy_' + idx] !== undefined
           ? state.bgOverrides['kindy_' + idx]
           : (isMunicipal ? kc.kindy.bg_municipal_eur : kc.kindy.bg_private_eur);
-        const pAud  = kc.kindy.perth_aud;
+        const pAud  = effectiveCcsView === 'net' ? kc.kindy.perth_aud_net_pr_median : kc.kindy.perth_aud;
         const pEur  = audToEur(pAud);
 
         const block = el('div', 'kids-child-block');
@@ -482,12 +528,36 @@ function buildKidsSection() {
         hdr.appendChild(removeBtn);
         block.appendChild(hdr);
 
+        // CCS gross/net toggle (hidden for 482)
+        if (!is482) {
+          const ccsToggle = el('div', 'acc-sub-toggle ccs-toggle');
+          const grossBtn = el('button', 'acc-sub-btn kindy-ccs-btn' + (effectiveCcsView === 'gross' ? ' active' : ''));
+          grossBtn.dataset.idx = idx;
+          grossBtn.dataset.ccsview = 'gross';
+          grossBtn.setAttribute('type', 'button');
+          grossBtn.textContent = 'Бруто (преди CCS)';
+          const netBtn = el('button', 'acc-sub-btn kindy-ccs-btn' + (effectiveCcsView === 'net' ? ' active' : ''));
+          netBtn.dataset.idx = idx;
+          netBtn.dataset.ccsview = 'net';
+          netBtn.setAttribute('type', 'button');
+          netBtn.textContent = 'Нето (след субсидия)';
+          ccsToggle.appendChild(grossBtn);
+          ccsToggle.appendChild(netBtn);
+          block.appendChild(ccsToggle);
+        }
+
         // Number block
         block.appendChild(buildNumBlockKindy(idx, bgEur, pAud, pEur));
 
         // CCS notice
         const ccsBox = el('div', 'ccs-notice');
-        ccsBox.innerHTML = `⚠️ Тази сума е ПРЕДИ държавната субсидия (CCS). Реалният разход за семейство с медианен доход (~$130 000/год.) е $600–$900/мес. след субсидия. Използвайте официалния калкулатор: <a href="https://www.servicesaustralia.gov.au/child-care-subsidy-calculator" target="_blank" rel="noopener noreferrer">servicesaustralia.gov.au/childcarecalculator</a>`;
+        if (is482) {
+          ccsBox.innerHTML = `⚠️ ${kc.kindy.note_perth_482_no_ccs}`;
+        } else if (effectiveCcsView === 'gross') {
+          ccsBox.innerHTML = `⚠️ Тази сума е ПРЕДИ държавната субсидия (CCS). Реалният разход за семейство с медианен доход (~$130 000/год.) е ${kc.kindy.perth_aud_net_pr_range}/мес. след субсидия. Използвайте официалния калкулатор: <a href="${kc.kindy.ccs_calculator_url}" target="_blank" rel="noopener noreferrer">startingblocks.gov.au</a>`;
+        } else {
+          ccsBox.innerHTML = `💡 ${kc.kindy.note_perth_net} Брутна цена преди субсидия: ${fmtAud(kc.kindy.perth_aud)}/мес. Калкулатор: <a href="${kc.kindy.ccs_calculator_url}" target="_blank" rel="noopener noreferrer">startingblocks.gov.au</a>`;
+        }
         block.appendChild(ccsBox);
 
         // Info panel for kindy
@@ -719,6 +789,7 @@ function calcTotals() {
 
   cats.forEach(cat => {
     if (cat.grocery && cat.grocery_option !== state.groceryChoice) return;
+    if (cat.transport && cat.transport_option !== state.transportChoice) return;
     if (cat.housing_type && cat.housing_sub !== activeHousingSub()) return;
     bgEur    += scaleBgEur(cat);
     perthAud += scaleAud(cat);
@@ -731,7 +802,9 @@ function calcTotals() {
         ? state.bgOverrides['kindy_' + idx]
         : (child.bgType === 'municipal' ? kc.kindy.bg_municipal_eur : kc.kindy.bg_private_eur);
       bgEur    += bgVal;
-      perthAud += kc.kindy.perth_aud;
+      const is482 = state.visaType === '482';
+      const effectiveCcsView = is482 ? 'gross' : (child.ccsView || 'net');
+      perthAud += effectiveCcsView === 'net' ? kc.kindy.perth_aud_net_pr_median : kc.kindy.perth_aud;
     });
     state.schoolChildren.forEach((child, idx) => {
       const bgVal = state.bgOverrides['school_' + idx] !== undefined
@@ -756,7 +829,9 @@ function calcKidsTotals() {
     bgEur    += state.bgOverrides['kindy_' + idx] !== undefined
       ? state.bgOverrides['kindy_' + idx]
       : (child.bgType === 'municipal' ? kc.kindy.bg_municipal_eur : kc.kindy.bg_private_eur);
-    perthAud += kc.kindy.perth_aud;
+    const is482 = state.visaType === '482';
+    const effectiveCcsView = is482 ? 'gross' : (child.ccsView || 'net');
+    perthAud += effectiveCcsView === 'net' ? kc.kindy.perth_aud_net_pr_median : kc.kindy.perth_aud;
   });
   state.schoolChildren.forEach((child, idx) => {
     bgEur += state.bgOverrides['school_' + idx] !== undefined
@@ -773,7 +848,7 @@ function calcKidsTotals() {
 function buildStickyTotal(container) {
   const totals  = calcTotals();
   const pEur    = audToEur(totals.perthAud);
-  const sizeKey = state.householdSize === 4 ? '4' : String(state.householdSize);
+  const sizeKey = String(state.householdSize);
   const floor   = CFG.floor_costs[sizeKey]?.aud ?? 0;
   const isOk    = totals.perthAud >= floor;
 
@@ -833,13 +908,13 @@ function buildStickyTotal(container) {
   document.body.appendChild(bar);
 
   // Floor popup
-  const sizeLabel = state.householdSize === 4 ? '4+' : state.householdSize;
+  const floorSizeLabel = state.householdSize;
   const popup = el('div', `sticky-floor-popup ${isOk ? 'ok' : 'warn'}${state.floorPopupOpen ? ' visible' : ''}`);
   popup.id = 'sticky-floor-popup';
   if (isOk) {
-    popup.innerHTML = `<strong>✓ Реалистичен бюджет</strong>Изчисленият разход надвишава препоръчителния минимум от ${fmtAud(floor)}/мес. за домакинство от ${sizeLabel} души в Пърт.`;
+    popup.innerHTML = `<strong>✓ Реалистичен бюджет</strong>Изчисленият разход надвишава препоръчителния минимум от ${fmtAud(floor)}/мес. за домакинство от ${floorSizeLabel} души в Пърт.`;
   } else {
-    popup.innerHTML = `<strong>⚠️ Под препоръчителния минимум</strong>Изчисленият бюджет е под ${fmtAud(floor)}/мес. — препоръчителния минимум за домакинство от ${sizeLabel} души. Проверете дали сте включили всички разходи.`;
+    popup.innerHTML = `<strong>⚠️ Под препоръчителния минимум</strong>Изчисленият бюджет е под ${fmtAud(floor)}/мес. — препоръчителния минимум за домакинство от ${floorSizeLabel} души. Проверете дали сте включили всички разходи.`;
   }
   document.body.appendChild(popup);
 }
@@ -956,11 +1031,22 @@ function wireInfoPanelEvents(container) {
 }
 
 function wireKidsEvents(container) {
-  container.querySelectorAll('.kindy-bg-btn').forEach(btn => {
+  // BUG-002 FIX: selector was '.kindy-bg-btn' but buttons have class 'kids-bg-btn'
+  container.querySelectorAll('.kids-bg-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const idx = parseInt(btn.dataset.idx);
       state.kindyChildren[idx].bgType = btn.dataset.bgtype;
+      renderResults();
+    });
+  });
+
+  // CCS gross/net toggle
+  container.querySelectorAll('.kindy-ccs-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.idx);
+      state.kindyChildren[idx].ccsView = btn.dataset.ccsview;
       renderResults();
     });
   });
@@ -978,7 +1064,7 @@ function wireKidsEvents(container) {
   if (addKindy) {
     addKindy.addEventListener('click', e => {
       e.stopPropagation();
-      state.kindyChildren.push({ bgType: 'municipal' });
+      state.kindyChildren.push({ bgType: 'municipal', ccsView: state.visaType === '482' ? 'gross' : 'net' });
       renderResults();
     });
   }
@@ -1011,6 +1097,8 @@ function wireSubToggleEvents(container) {
         else state.housingSubOwner = btn.dataset.sub;
       } else if (btn.dataset.subType === 'grocery') {
         state.groceryChoice = btn.dataset.grocery;
+      } else if (btn.dataset.subType === 'transport') {
+        state.transportChoice = btn.dataset.transport;
       }
       renderResults();
     });
