@@ -24,86 +24,8 @@
       </div>
     </header>
 
-    <main class="input-main">
-
-      <section class="field-group">
-        <label class="field-label">Брой хора в домакинството</label>
-        <div class="segment-control" id="ctrl-household">
-          <button class="seg-btn" data-value="1">1</button>
-          <button class="seg-btn" data-value="2">2</button>
-          <button class="seg-btn active" data-value="3">3</button>
-          <button class="seg-btn" data-value="4">4</button>
-        </div>
-      </section>
-
-      <section class="field-group">
-        <label class="field-label">Домакинството включва</label>
-        <div class="checkbox-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="chk-kids" checked>
-            <span class="checkbox-text">Деца</span>
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" id="chk-pets" checked>
-            <span class="checkbox-text">Домашни любимци</span>
-          </label>
-        </div>
-      </section>
-
-      <section class="field-group">
-        <label class="field-label">Жилище в Пърт</label>
-        <div class="toggle-control" id="ctrl-housing">
-          <button class="tog-btn active" data-value="renter">Наемател</button>
-          <button class="tog-btn" data-value="owner">Собственик / ипотека</button>
-        </div>
-      </section>
-
-      <section class="field-group">
-        <label class="field-label">Жилище в България</label>
-        <div class="toggle-control" id="ctrl-bg-housing">
-          <button class="tog-btn bg-housing-btn active" data-bghousing="own">Собственик</button>
-          <button class="tog-btn bg-housing-btn" data-bghousing="mortgage">Ипотека</button>
-          <button class="tog-btn bg-housing-btn" data-bghousing="rent">Наемател</button>
-        </div>
-        <div class="rate-row" style="margin-top: 12px;">
-          <span class="rate-label">€</span>
-          <input type="number" id="input-bg-housing-cost" class="rate-input"
-                 placeholder="35" step="1" min="0"
-                 inputmode="numeric">
-          <span class="rate-label">на месец</span>
-        </div>
-        <p class="field-hint" id="bg-housing-note"></p>
-      </section>
-
-      <section class="field-group">
-        <label class="field-label">Вид виза</label>
-        <div class="toggle-control" id="ctrl-visa">
-          <button class="tog-btn active" data-value="pr">Постоянно пребиваване</button>
-          <button class="tog-btn" data-value="482">Временна виза 482</button>
-        </div>
-        <p class="field-hint">Визи 189, 190, 491 → постоянно пребиваване. Спонсорирана 482 → временна виза.</p>
-      </section>
-
-      <section class="field-group">
-        <label class="field-label">Валутен курс <span class="optional-tag">по избор</span></label>
-        <div class="rate-row">
-          <span class="rate-label">1 AUD =</span>
-          <input type="number" id="input-rate" class="rate-input"
-                 placeholder="напр. 0.606" step="0.001" min="0.1" max="5"
-                 inputmode="decimal">
-          <span class="rate-label">EUR</span>
-        </div>
-        <p class="field-hint">
-          Остави празно — ще видиш резултатите само в AUD.
-          <a href="https://xe.com/currencyconverter/convert/?Amount=1&From=AUD&To=EUR"
-             target="_blank" rel="noopener noreferrer">Провери курса на xe.com →</a>
-        </p>
-      </section>
-
-      <button class="btn-primary" id="btn-calculate">
-        Изчисли бюджета →
-      </button>
-
+    <main class="input-main" id="input-main">
+      <!-- rendered by renderInputScreen() in app.js -->
     </main>
   </div>
 

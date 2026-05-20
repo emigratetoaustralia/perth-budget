@@ -17,10 +17,12 @@ const state = {
   bgOverrides:      {},
   bgHousingType:    'own',    // 'own' | 'mortgage' | 'rent'
   bgHousingCost:    35,       // EUR/month — default for owner (IMP-012)
-  activeResultsTab: 'monthly',  // 'monthly' | 'setup'
-  openAccordion:    null,        // id of currently open accordion section
-  openInfoPanels:   {},          // {sectionId: bool}
-  floorPopupOpen:   false,
+  activeResultsTab:  'monthly',  // 'monthly' | 'setup'
+  openAccordion:     null,       // id of currently open accordion section
+  openInfoPanels:    {},         // {sectionId: bool}
+  floorPopupOpen:    false,
+  inputOpenSection:  1,          // which input accordion section is open (1–5)
+  inputComplete:     { 1: false, 2: false, 3: false, 4: false, 5: false },
 };
 
 let CFG = null;
@@ -39,104 +41,471 @@ fetch('data.json')
 
 // ── Input screen ─────────────────────────────────────────────
 function initInput() {
-  bindSegment('ctrl-household', v => {
-    state.householdSize = parseInt(v);
-    setDefaultHousingSub();
-  });
-  bindToggle('ctrl-housing', v => { state.housingType = v; });
-  bindToggle('ctrl-visa',    v => { state.visaType    = v; });
-
-  document.getElementById('chk-kids').addEventListener('change', e => {
-    state.hasKids = e.target.checked;
-  });
-  document.getElementById('chk-pets').addEventListener('change', e => {
-    state.hasPets = e.target.checked;
-  });
-
-  document.getElementById('input-rate').addEventListener('input', e => {
-    const val = parseFloat(e.target.value);
-    state.eurPerAud = (val > 0) ? val : null;
-  });
-
-  document.getElementById('btn-calculate').addEventListener('click', showResults);
-  document.getElementById('btn-back').addEventListener('click', showInput);
-  document.getElementById('btn-print').addEventListener('click', () => window.print());
-
-  // IMP-012: BG housing type toggle + editable cost field
-  const bgHousingBtns = document.querySelectorAll('.bg-housing-btn');
-  const bgHousingInput = document.getElementById('input-bg-housing-cost');
-  const bgHousingNote  = document.getElementById('bg-housing-note');
-
-  const bgHousingNotes = {
-    own:      'Включва: данък сгради ~€10, такса смет ~€8, вход/поддръжка ~€17. Променете сумата ако вашите разходи се различават.',
-    mortgage: 'Въведете месечната си ипотечна вноска в евро.',
-    rent:     'Въведете месечния си наем в евро.'
-  };
-
-  function updateBgHousingUI() {
-    if (state.bgHousingType === 'own') {
-      bgHousingInput.value = state.bgHousingCost || 35;
-      bgHousingInput.placeholder = '35';
-    } else {
-      bgHousingInput.value = state.bgHousingCost > 0 && state.bgHousingType !== 'own'
-        ? state.bgHousingCost : '';
-      bgHousingInput.placeholder = '0';
-    }
-    if (bgHousingNote) bgHousingNote.textContent = bgHousingNotes[state.bgHousingType] || '';
-  }
-
-  bgHousingBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      bgHousingBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.bgHousingType = btn.dataset.bghousing;
-      state.bgHousingCost = state.bgHousingType === 'own' ? 35 : 0;
-      updateBgHousingUI();
-    });
-  });
-
-  if (bgHousingInput) {
-    bgHousingInput.addEventListener('input', e => {
-      const val = parseFloat(e.target.value);
-      state.bgHousingCost = (!isNaN(val) && val >= 0) ? val : 0;
-    });
-  }
-
-  updateBgHousingUI();
-
-  setDefaultHousingSub();
+  renderInputScreen();
 
   // IMP-002: inject version from data.json into input header
   const versionSpan = document.getElementById('app-version');
   if (versionSpan && CFG.meta.version) {
     versionSpan.textContent = 'v' + CFG.meta.version;
   }
+
+  document.getElementById('btn-back').addEventListener('click', showInput);
+  document.getElementById('btn-print').addEventListener('click', () => window.print());
 }
 
 function setDefaultHousingSub() {
-  state.housingSubRent = '3bed';
+  state.housingSubRent  = state.householdSize <= 2 ? '3bed' : '4bed';
+  state.housingSubOwner = state.housingSubOwner || 'apt';
 }
 
-function bindSegment(id, onChange) {
-  const ctrl = document.getElementById(id);
-  ctrl.querySelectorAll('.seg-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      ctrl.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      onChange(btn.dataset.value);
-    });
+// ── Input accordion (v0.6) ────────────────────────────────────
+function renderInputScreen() {
+  const main = document.getElementById('input-main');
+  main.innerHTML = '';
+
+  const acc = el('div', 'input-accordion');
+  acc.appendChild(buildInputSection(1, 'Домакинство',         buildInputSection1));
+  acc.appendChild(buildInputSection(2, 'Виза',                buildInputSection2));
+  acc.appendChild(buildInputSection(3, 'Жилище в България',   buildInputSection3));
+  acc.appendChild(buildInputSection(4, 'Жилище в Пърт',       buildInputSection4));
+  acc.appendChild(buildInputSection(5, 'Валутен курс',        buildInputSection5));
+  main.appendChild(acc);
+
+  const calcBtn = el('button', 'btn-primary');
+  calcBtn.id = 'btn-calculate';
+  calcBtn.setAttribute('type', 'button');
+  calcBtn.textContent = 'Изчисли бюджета →';
+  calcBtn.disabled = !([1,2,3,4,5].every(n => state.inputComplete[n]));
+  calcBtn.addEventListener('click', showResults);
+  main.appendChild(calcBtn);
+
+  // Scroll open section into view (after DOM settles)
+  requestAnimationFrame(() => {
+    const open = main.querySelector('.input-section.open');
+    if (open) open.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 }
 
-function bindToggle(id, onChange) {
-  const ctrl = document.getElementById(id);
-  ctrl.querySelectorAll('.tog-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      ctrl.querySelectorAll('.tog-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      onChange(btn.dataset.value);
+function buildInputSection(n, label, bodyFn) {
+  const isOpen     = state.inputOpenSection === n;
+  const isComplete = state.inputComplete[n];
+
+  const section = el('div', 'input-section' +
+    (isOpen     ? ' open'     : '') +
+    (isComplete ? ' complete' : ''));
+  section.dataset.inputSection = n;
+
+  // Header
+  const header = el('button', 'input-section-header');
+  header.setAttribute('type', 'button');
+
+  const labelEl = el('span', 'input-section-label');
+  labelEl.textContent = label;
+
+  const summary = el('span', 'input-section-summary');
+  summary.textContent = isComplete ? (state.inputComplete[n + '_summary'] || '') : '';
+
+  const chevron = el('i', 'input-section-chevron');
+  chevron.textContent = '▼';
+
+  header.appendChild(labelEl);
+  header.appendChild(summary);
+  header.appendChild(chevron);
+  header.addEventListener('click', () => openInputSection(n));
+  section.appendChild(header);
+
+  // Body
+  const body = el('div', 'input-section-body');
+
+  // Info panel
+  const infoText = CFG.input_info?.['s' + n];
+  if (infoText) {
+    const infoToggle = el('button', 'input-info-toggle');
+    infoToggle.setAttribute('type', 'button');
+    infoToggle.textContent = 'ⓘ Какво означава това?';
+
+    const infoPanel = el('div', 'input-info-panel');
+    infoPanel.textContent = infoText;
+
+    infoToggle.addEventListener('click', () => {
+      const open = infoPanel.classList.toggle('open');
+      infoToggle.textContent = open ? 'ⓘ Скрий' : 'ⓘ Какво означава това?';
     });
+
+    body.appendChild(infoToggle);
+    body.appendChild(infoPanel);
+  }
+
+  bodyFn(body, n);
+  section.appendChild(body);
+  return section;
+}
+
+function openInputSection(n) {
+  state.inputOpenSection = n;
+  renderInputScreen();
+}
+
+function markSectionComplete(n, summaryText) {
+  state.inputComplete[n] = true;
+  state.inputComplete[n + '_summary'] = summaryText;
+}
+
+function checkInputComplete() {
+  const allDone = [1,2,3,4,5].every(n => state.inputComplete[n]);
+  const btn = document.getElementById('btn-calculate');
+  if (btn) btn.disabled = !allDone;
+}
+
+function autoAdvance(n) {
+  if (n < 5) {
+    openInputSection(n + 1);
+  } else {
+    renderInputScreen();
+  }
+  checkInputComplete();
+}
+
+// ── Input section builders ────────────────────────────────────
+function buildInputSection1(body) {
+  // Household size
+  const sizeLabel = el('span', 'field-label');
+  sizeLabel.textContent = 'Брой хора в домакинството';
+  body.appendChild(sizeLabel);
+
+  const seg = el('div', 'segment-control');
+  [1, 2, 3, 4].forEach(v => {
+    const btn = el('button', 'seg-btn' + (state.householdSize === v ? ' active' : ''));
+    btn.setAttribute('type', 'button');
+    btn.textContent = v;
+    btn.addEventListener('click', () => {
+      state.householdSize = v;
+      setDefaultHousingSub();
+      buildSummary1AndAdvance();
+    });
+    seg.appendChild(btn);
   });
+  body.appendChild(seg);
+
+  // Kids counters
+  const kidsLabel = el('span', 'field-label');
+  kidsLabel.textContent = 'Деца';
+  body.appendChild(kidsLabel);
+
+  const counters = el('div', '');
+
+  const kindy = buildCounterRow(
+    'Малки деца', '0–4 г.',
+    state.kindyChildren.length, 0, 6,
+    delta => {
+      if (delta > 0) {
+        state.kindyChildren.push({ bgType: 'municipal', ccsView: state.visaType === '482' ? 'gross' : 'net' });
+      } else if (delta < 0 && state.kindyChildren.length > 0) {
+        state.kindyChildren.pop();
+      }
+      buildSummary1AndAdvance();
+    }
+  );
+  counters.appendChild(kindy);
+
+  const school = buildCounterRow(
+    'Деца в училище', '5–18 г.',
+    state.schoolChildren.length, 0, 6,
+    delta => {
+      if (delta > 0) {
+        state.schoolChildren.push({});
+      } else if (delta < 0 && state.schoolChildren.length > 0) {
+        state.schoolChildren.pop();
+      }
+      buildSummary1AndAdvance();
+    }
+  );
+  counters.appendChild(school);
+  body.appendChild(counters);
+
+  // Pets toggle
+  const petsLabel = el('span', 'field-label');
+  petsLabel.textContent = 'Домашни любимци';
+  body.appendChild(petsLabel);
+
+  const petsToggle = el('div', 'toggle-control');
+  [['да', true], ['не', false]].forEach(([txt, val]) => {
+    const isActive = state.hasPets === val;
+    const btn = el('button', 'tog-btn' + (isActive ? ' active' : ''));
+    btn.setAttribute('type', 'button');
+    btn.textContent = txt;
+    btn.addEventListener('click', () => {
+      state.hasPets = val;
+      buildSummary1AndAdvance();
+    });
+    petsToggle.appendChild(btn);
+  });
+  body.appendChild(petsToggle);
+}
+
+function buildSummary1AndAdvance() {
+  const totalKids = state.kindyChildren.length + state.schoolChildren.length;
+  const kidsPart  = totalKids > 0
+    ? `· 🧒 ${totalKids} ${totalKids === 1 ? 'дете' : 'деца'}`
+    : '· без деца';
+  const petsPart  = state.hasPets ? '· 🐾 да' : '';
+  const summary   = `👨‍👩‍👦 ${state.householdSize} ${kidsPart} ${petsPart}`.trim();
+  markSectionComplete(1, summary);
+  autoAdvance(1);
+}
+
+function buildCounterRow(label, ageRange, value, min, max, onChange) {
+  const row = el('div', 'input-counter-row');
+
+  const labelWrap = el('div', '');
+  const labelEl   = el('div', 'input-counter-label');
+  labelEl.textContent = label;
+  const ageEl = el('div', 'input-counter-age');
+  ageEl.textContent = ageRange;
+  labelWrap.appendChild(labelEl);
+  labelWrap.appendChild(ageEl);
+  row.appendChild(labelWrap);
+
+  const controls = el('div', 'input-counter-controls');
+
+  const minusBtn = el('button', 'input-counter-btn');
+  minusBtn.setAttribute('type', 'button');
+  minusBtn.textContent = '−';
+  if (value <= min) minusBtn.disabled = true;
+  minusBtn.addEventListener('click', () => onChange(-1));
+
+  const valueEl = el('span', 'input-counter-value');
+  valueEl.textContent = value;
+
+  const plusBtn = el('button', 'input-counter-btn');
+  plusBtn.setAttribute('type', 'button');
+  plusBtn.textContent = '+';
+  if (value >= max) plusBtn.disabled = true;
+  plusBtn.addEventListener('click', () => onChange(1));
+
+  controls.appendChild(minusBtn);
+  controls.appendChild(valueEl);
+  controls.appendChild(plusBtn);
+  row.appendChild(controls);
+  return row;
+}
+
+function buildInputSection2(body) {
+  const label = el('span', 'field-label');
+  label.textContent = 'Вид виза';
+  body.appendChild(label);
+
+  const toggle = el('div', 'toggle-control');
+  [['pr', 'PR (постоянно пребиваване)'], ['482', 'Виза 482 (работна)']].forEach(([val, txt]) => {
+    const btn = el('button', 'tog-btn' + (state.visaType === val ? ' active' : ''));
+    btn.setAttribute('type', 'button');
+    btn.textContent = txt;
+    btn.addEventListener('click', () => {
+      state.visaType = val;
+      state.kindyChildren.forEach(c => { c.ccsView = val === '482' ? 'gross' : 'net'; });
+      markSectionComplete(2, val === 'pr' ? '📄 PR' : '📄 482');
+      autoAdvance(2);
+    });
+    toggle.appendChild(btn);
+  });
+  body.appendChild(toggle);
+
+  const hint = el('div', 'field-hint');
+  hint.textContent = 'Влияе на здравни разходи и такси за образование.';
+  body.appendChild(hint);
+}
+
+function buildInputSection3(body) {
+  const bgHousingNotes = {
+    own:      'Включва: данък сгради ~€10, такса смет ~€8, вход/поддръжка ~€17.',
+    mortgage: 'Въведете месечната си ипотечна вноска в евро.',
+    rent:     'Въведете месечния си наем в евро.'
+  };
+
+  const label = el('span', 'field-label');
+  label.textContent = 'Жилищна ситуация в България';
+  body.appendChild(label);
+
+  const toggle = el('div', 'toggle-control');
+  [['own', 'Собственик'], ['mortgage', 'Ипотека'], ['rent', 'Наемател']].forEach(([val, txt]) => {
+    const btn = el('button', 'tog-btn' + (state.bgHousingType === val ? ' active' : ''));
+    btn.setAttribute('type', 'button');
+    btn.textContent = txt;
+    btn.addEventListener('click', () => {
+      state.bgHousingType = val;
+      state.bgHousingCost = val === 'own' ? 35 : 0;
+      renderInputScreen();
+    });
+    toggle.appendChild(btn);
+  });
+  body.appendChild(toggle);
+
+  const hint = el('div', 'field-hint');
+  hint.textContent = bgHousingNotes[state.bgHousingType];
+  body.appendChild(hint);
+
+  const numRow = el('div', 'input-num-row');
+  const sym    = el('span', 'input-num-sym');
+  sym.textContent = '€';
+
+  const field = el('input', 'input-num-field');
+  field.type      = 'number';
+  field.min       = '0';
+  field.step      = '1';
+  field.inputMode = 'numeric';
+  field.value     = state.bgHousingCost > 0
+    ? state.bgHousingCost
+    : (state.bgHousingType === 'own' ? 35 : '');
+  field.placeholder = state.bgHousingType === 'own' ? '35' : '0';
+
+  const confirmBtn = el('button', 'btn-confirm-input');
+  confirmBtn.setAttribute('type', 'button');
+  confirmBtn.textContent = 'Потвърди →';
+
+  function confirmSection3() {
+    const val = parseFloat(field.value);
+    if (!isNaN(val) && val >= 0) {
+      state.bgHousingCost = val;
+      const typeLabel = { own: 'Собственик', mortgage: 'Ипотека', rent: 'Наемател' }[state.bgHousingType];
+      markSectionComplete(3, `🏠 ${typeLabel} · €${Math.round(val)}/мес.`);
+      autoAdvance(3);
+    }
+  }
+
+  field.addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    state.bgHousingCost = (!isNaN(v) && v >= 0) ? v : 0;
+  });
+  field.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); confirmSection3(); }
+  });
+  confirmBtn.addEventListener('click', confirmSection3);
+
+  numRow.appendChild(sym);
+  numRow.appendChild(field);
+  numRow.appendChild(confirmBtn);
+  body.appendChild(numRow);
+}
+
+function buildInputSection4(body) {
+  const label = el('span', 'field-label');
+  label.textContent = 'Жилищна ситуация в Пърт';
+  body.appendChild(label);
+
+  const typeToggle = el('div', 'toggle-control');
+  [['renter', 'Наемател'], ['owner', 'Ипотека / Собственик']].forEach(([val, txt]) => {
+    const btn = el('button', 'tog-btn' + (state.housingType === val ? ' active' : ''));
+    btn.setAttribute('type', 'button');
+    btn.textContent = txt;
+    btn.addEventListener('click', () => {
+      state.housingType = val;
+      setDefaultHousingSub();
+      renderInputScreen();
+    });
+    typeToggle.appendChild(btn);
+  });
+  body.appendChild(typeToggle);
+
+  // Sub-toggle — always visible; explicit tap required to advance
+  const subLabel = el('span', 'field-label');
+
+  if (state.housingType === 'renter') {
+    subLabel.textContent = 'Размер на жилището';
+    body.appendChild(subLabel);
+
+    const subToggle = el('div', 'toggle-control');
+    [['3bed', '3-спална'], ['4bed', '4-спална']].forEach(([val, txt]) => {
+      const btn = el('button', 'tog-btn' + (state.housingSubRent === val ? ' active' : ''));
+      btn.setAttribute('type', 'button');
+      btn.textContent = txt;
+      btn.addEventListener('click', () => {
+        state.housingSubRent = val;
+        markSectionComplete(4, `🏠 Наемател · ${txt}`);
+        autoAdvance(4);
+      });
+      subToggle.appendChild(btn);
+    });
+    body.appendChild(subToggle);
+
+  } else {
+    subLabel.textContent = 'Вид имот';
+    body.appendChild(subLabel);
+
+    const subToggle = el('div', 'toggle-control');
+    [['apt', 'Апартамент / Юнит'], ['house', 'Самостоятелна къща']].forEach(([val, txt]) => {
+      const btn = el('button', 'tog-btn' + (state.housingSubOwner === val ? ' active' : ''));
+      btn.setAttribute('type', 'button');
+      btn.textContent = txt;
+      btn.addEventListener('click', () => {
+        state.housingSubOwner = val;
+        const subText = val === 'apt' ? 'Апартамент' : 'Къща';
+        markSectionComplete(4, `🏠 Ипотека · ${subText}`);
+        autoAdvance(4);
+      });
+      subToggle.appendChild(btn);
+    });
+    body.appendChild(subToggle);
+  }
+}
+
+function buildInputSection5(body) {
+  // exchange_rate_anchor in data.json is AUD-per-EUR (1.65)
+  // state.eurPerAud stores EUR-per-AUD (0.61) — the user-facing value
+  const anchorEurPerAud = CFG.meta.exchange_rate_anchor
+    ? parseFloat((1 / CFG.meta.exchange_rate_anchor).toFixed(4))
+    : 0.61;
+  if (state.eurPerAud === null) state.eurPerAud = anchorEurPerAud;
+
+  const label = el('span', 'field-label');
+  label.textContent = 'Валутен курс';
+  body.appendChild(label);
+
+  const numRow = el('div', 'input-num-row');
+
+  const sym1 = el('span', 'input-num-sym');
+  sym1.textContent = '1 AUD =';
+
+  const field = el('input', 'input-num-field');
+  field.type      = 'number';
+  field.min       = '0.01';
+  field.step      = '0.01';
+  field.inputMode = 'decimal';
+  field.value     = state.eurPerAud ?? anchorEurPerAud;
+
+  const sym2 = el('span', 'input-num-sym');
+  sym2.textContent = 'EUR';
+
+  const confirmBtn = el('button', 'btn-confirm-input');
+  confirmBtn.setAttribute('type', 'button');
+  confirmBtn.textContent = 'Потвърди →';
+
+  function confirmSection5() {
+    const val = parseFloat(field.value);
+    if (!isNaN(val) && val > 0) {
+      state.eurPerAud = val;
+      markSectionComplete(5, `💱 ${val}`);
+      autoAdvance(5);
+    }
+  }
+
+  field.addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    state.eurPerAud = (!isNaN(v) && v > 0) ? v : null;
+  });
+  field.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); confirmSection5(); }
+  });
+  confirmBtn.addEventListener('click', confirmSection5);
+
+  numRow.appendChild(sym1);
+  numRow.appendChild(field);
+  numRow.appendChild(sym2);
+  numRow.appendChild(confirmBtn);
+  body.appendChild(numRow);
+
+  const hint = el('div', 'field-hint');
+  hint.textContent = `Референтен курс: 1 AUD = ${anchorEurPerAud} EUR (средата на 2026 г.)`;
+  body.appendChild(hint);
 }
 
 // ── Screen switching ─────────────────────────────────────────
@@ -159,6 +528,7 @@ function showInput() {
   const popup = document.getElementById('sticky-floor-popup');
   if (bar)   bar.style.display   = 'none';
   if (popup) popup.style.display = 'none';
+  renderInputScreen();
   window.scrollTo(0, 0);
 }
 
