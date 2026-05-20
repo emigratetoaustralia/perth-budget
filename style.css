@@ -625,13 +625,31 @@ body {
   margin-bottom: 3px;
 }
 
-/* ── Sub-toggle inside accordion (housing / grocery / transport) ── */
+/* Sub-toggle inside accordion (housing / grocery / transport) ── */
 .acc-sub-toggle {
   display: flex;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   overflow: hidden;
   margin-top: 14px;
+}
+
+/* Housing has 4 options — allow wrap to 2×2 on narrow screens */
+.housing-sub-toggle {
+  flex-wrap: wrap;
+}
+
+.housing-sub-toggle .acc-sub-btn {
+  flex-basis: 50%;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.housing-sub-toggle .acc-sub-btn:nth-child(even) {
+  border-right: none;
+}
+
+.housing-sub-toggle .acc-sub-btn:nth-last-child(-n+2) {
+  border-bottom: none;
 }
 
 .acc-sub-btn {
@@ -841,7 +859,6 @@ body {
   display: flex;
   gap: 14px;
   flex: 1;
-  align-items: baseline;
 }
 
 .sticky-total-item {

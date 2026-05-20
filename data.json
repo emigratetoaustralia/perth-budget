@@ -11,28 +11,52 @@
 
   "categories": [
     {
-      "id": "housing_renter_2bed",
-      "label_bg": "2-стаен апартамент",
+      "id": "housing_renter_3bed",
+      "label_bg": "Къща с 3 спални",
       "label_perth": "3-спална къща",
       "scaling": "semi-fixed",
       "housing_type": "renter",
-      "housing_sub": "2bed",
+      "housing_sub": "3bed",
       "bg_eur": null,
       "perth_aud": 3250,
       "note_bg": null,
       "note_perth": "Медианен седмичен наем по REIWA, данни до април 2026. Нови имигранти без местни препоръки или кредитна история обикновено плащат премия от $1 400–$3 500 при подписване на договора."
     },
     {
-      "id": "housing_renter_3bed",
-      "label_bg": "3-стаен апартамент",
+      "id": "housing_renter_4bed",
+      "label_bg": "Къща с 4 спални",
       "label_perth": "4-спална къща",
       "scaling": "semi-fixed",
       "housing_type": "renter",
-      "housing_sub": "3bed",
+      "housing_sub": "4bed",
       "bg_eur": null,
       "perth_aud": 3575,
       "note_bg": null,
       "note_perth": "Медианен седмичен наем по REIWA, данни до ноември 2025. Нови имигранти без местни препоръки или кредитна история обикновено плащат премия от $1 400–$3 500 при подписване на договора."
+    },
+    {
+      "id": "housing_renter_unit",
+      "label_bg": "Апартамент/юнит",
+      "label_perth": "1–2 спални",
+      "scaling": "semi-fixed",
+      "housing_type": "renter",
+      "housing_sub": "unit",
+      "bg_eur": null,
+      "perth_aud": 3050,
+      "note_bg": null,
+      "note_perth": "Медиана за апартаменти и юнити в Пърт ~$700/седмица (REIWA, Q1 2026). Включва апартаменти и home units — обикновено по-компактни и по-близо до центъра. Нови имигранти без местни препоръки или кредитна история обикновено плащат премия от $1 400–$3 500 при подписване на договора."
+    },
+    {
+      "id": "housing_renter_townhouse",
+      "label_bg": "Таунхаус",
+      "label_perth": "2–3 спални",
+      "scaling": "semi-fixed",
+      "housing_type": "renter",
+      "housing_sub": "townhouse",
+      "bg_eur": null,
+      "perth_aud": 3120,
+      "note_bg": null,
+      "note_perth": "Двуетажна жилищна единица с малък двор и гараж. Медиана ~$720/седмица (REIWA/HERE Property, март 2026). Добър компромис между апартамент и самостоятелна къща. Нови имигранти без местни препоръки или кредитна история обикновено плащат премия от $1 400–$3 500 при подписване на договора."
     },
     {
       "id": "housing_owner_apt",
@@ -67,6 +91,7 @@
       "note_perth": "Общински данъци и такси: ~$150/мес. (данък върху имот + ESL + сметосъбиране, годишно ~$1 782 — City of South Perth 2025/26). Застраховка на жилище и имущество: ~$185/мес. (средна стойност за Пърт, Canstar/Finity 2025/26). Рутинна поддръжка и ремонти НЕ е включена — препоръчва се допълнителен буфер от 20–30%."
     },
     {
+      "id": "utilities",
       "label_bg": "Комунални услуги",
       "scaling": "semi-fixed",
       "bg_eur": 220,

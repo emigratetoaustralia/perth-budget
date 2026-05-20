@@ -4,7 +4,7 @@
 const state = {
   householdSize:    3,
   housingType:      'renter',
-  housingSubRent:   '2bed',   // '2bed' | '3bed'
+  housingSubRent:   '3bed',   // '3bed' | '4bed' | 'unit' | 'townhouse'
   housingSubOwner:  'apt',    // 'apt'  | 'house'
   visaType:         'pr',
   eurPerAud:        null,
@@ -114,7 +114,7 @@ function initInput() {
 }
 
 function setDefaultHousingSub() {
-  state.housingSubRent = state.householdSize <= 2 ? '2bed' : '3bed';
+  state.housingSubRent = '3bed';
 }
 
 function bindSegment(id, onChange) {
@@ -416,11 +416,11 @@ function buildHousingSection(housingCats) {
   return buildAccordionItem(
     'housing',
     label,
-    bgEur !== null ? fmtEur(bgEur) : '—',
+    state.bgHousingCost > 0 ? fmtEur(state.bgHousingCost) : '—',
     fmtAud(pAud),
     body => {
       // Sub-toggle
-      const toggle = el('div', 'acc-sub-toggle');
+      const toggle = el('div', 'acc-sub-toggle housing-sub-toggle');
       housingCats.forEach(cat => {
         const btn = el('button', 'acc-sub-btn' + (cat.housing_sub === activeSub ? ' active' : ''));
         btn.dataset.subType = 'housing';
