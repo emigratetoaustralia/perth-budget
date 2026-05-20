@@ -181,7 +181,7 @@ function buildInputSection1(body) {
     btn.addEventListener('click', () => {
       state.householdSize = v;
       setDefaultHousingSub();
-      buildSummary1AndAdvance();
+      renderInputScreen();  // re-render in place — do NOT auto-advance
     });
     seg.appendChild(btn);
   });
@@ -203,7 +203,7 @@ function buildInputSection1(body) {
       } else if (delta < 0 && state.kindyChildren.length > 0) {
         state.kindyChildren.pop();
       }
-      buildSummary1AndAdvance();
+      renderInputScreen();  // re-render in place — do NOT auto-advance
     }
   );
   counters.appendChild(kindy);
@@ -217,7 +217,7 @@ function buildInputSection1(body) {
       } else if (delta < 0 && state.schoolChildren.length > 0) {
         state.schoolChildren.pop();
       }
-      buildSummary1AndAdvance();
+      renderInputScreen();  // re-render in place — do NOT auto-advance
     }
   );
   counters.appendChild(school);
@@ -236,11 +236,20 @@ function buildInputSection1(body) {
     btn.textContent = txt;
     btn.addEventListener('click', () => {
       state.hasPets = val;
-      buildSummary1AndAdvance();
+      renderInputScreen();  // re-render in place — do NOT auto-advance
     });
     petsToggle.appendChild(btn);
   });
   body.appendChild(petsToggle);
+
+  // Explicit confirm button — only tap that advances to Section 2
+  const confirmBtn = el('button', 'btn-confirm-input');
+  confirmBtn.setAttribute('type', 'button');
+  confirmBtn.textContent = 'Потвърди →';
+  confirmBtn.style.marginTop = '16px';
+  confirmBtn.style.width = '100%';
+  confirmBtn.addEventListener('click', buildSummary1AndAdvance);
+  body.appendChild(confirmBtn);
 }
 
 function buildSummary1AndAdvance() {
@@ -460,6 +469,7 @@ function buildInputSection5(body) {
   label.textContent = 'Валутен курс';
   body.appendChild(label);
 
+  // Row 1: field only — "1 AUD = [field] EUR"
   const numRow = el('div', 'input-num-row');
 
   const sym1 = el('span', 'input-num-sym');
@@ -475,9 +485,17 @@ function buildInputSection5(body) {
   const sym2 = el('span', 'input-num-sym');
   sym2.textContent = 'EUR';
 
+  numRow.appendChild(sym1);
+  numRow.appendChild(field);
+  numRow.appendChild(sym2);
+  body.appendChild(numRow);
+
+  // Row 2: confirm button on its own full-width line
   const confirmBtn = el('button', 'btn-confirm-input');
   confirmBtn.setAttribute('type', 'button');
   confirmBtn.textContent = 'Потвърди →';
+  confirmBtn.style.marginTop = '10px';
+  confirmBtn.style.width = '100%';
 
   function confirmSection5() {
     const val = parseFloat(field.value);
@@ -497,11 +515,7 @@ function buildInputSection5(body) {
   });
   confirmBtn.addEventListener('click', confirmSection5);
 
-  numRow.appendChild(sym1);
-  numRow.appendChild(field);
-  numRow.appendChild(sym2);
-  numRow.appendChild(confirmBtn);
-  body.appendChild(numRow);
+  body.appendChild(confirmBtn);
 
   const hint = el('div', 'field-hint');
   hint.textContent = `Референтен курс: 1 AUD = ${anchorEurPerAud} EUR (средата на 2026 г.)`;
