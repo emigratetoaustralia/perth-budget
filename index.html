@@ -32,7 +32,7 @@
           <button class="seg-btn" data-value="1">1</button>
           <button class="seg-btn" data-value="2">2</button>
           <button class="seg-btn active" data-value="3">3</button>
-          <button class="seg-btn" data-value="4">4+</button>
+          <button class="seg-btn" data-value="4">4</button>
         </div>
       </section>
 
@@ -56,6 +56,23 @@
           <button class="tog-btn active" data-value="renter">Наемател</button>
           <button class="tog-btn" data-value="owner">Собственик / ипотека</button>
         </div>
+      </section>
+
+      <section class="field-group">
+        <label class="field-label">Жилище в България</label>
+        <div class="toggle-control" id="ctrl-bg-housing">
+          <button class="tog-btn bg-housing-btn active" data-bghousing="own">Собственик</button>
+          <button class="tog-btn bg-housing-btn" data-bghousing="mortgage">Ипотека</button>
+          <button class="tog-btn bg-housing-btn" data-bghousing="rent">Наемател</button>
+        </div>
+        <div class="rate-row" style="margin-top: 12px;">
+          <span class="rate-label">€</span>
+          <input type="number" id="input-bg-housing-cost" class="rate-input"
+                 placeholder="35" step="1" min="0"
+                 inputmode="numeric">
+          <span class="rate-label">на месец</span>
+        </div>
+        <p class="field-hint" id="bg-housing-note"></p>
       </section>
 
       <section class="field-group">

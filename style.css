@@ -347,7 +347,7 @@ body {
 }
 
 .meta-item .meta-icon {
-  opacity: 0.85;
+  opacity: 1;
   font-style: normal;
 }
 
@@ -847,6 +847,7 @@ body {
 .sticky-total-item {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
 }
 
 .sticky-total-label {
@@ -1004,6 +1005,19 @@ body {
   color: var(--blue);
   margin-bottom: 8px;
   font-size: 0.82rem;
+}
+
+/* IMP-015 */
+.footer-buffer-note {
+  margin-top: 8px;
+  font-style: italic;
+  opacity: 0.9;
+}
+
+/* IMP-011: Perth-only number block (no BG column) */
+.num-block-row-perth-only {
+  grid-template-columns: 1fr;
+  max-width: 50%;
 }
 
 /* ── Print styles ────────────────────────────────────────── */

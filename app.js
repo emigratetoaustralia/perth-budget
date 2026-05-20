@@ -15,6 +15,8 @@ const state = {
   kindyChildren:    [],       // [{bgType: 'municipal'|'private', ccsView: 'gross'|'net'}]
   schoolChildren:   [],       // [{}]  one entry per school-age child
   bgOverrides:      {},
+  bgHousingType:    'own',    // 'own' | 'mortgage' | 'rent'
+  bgHousingCost:    35,       // EUR/month — default for owner (IMP-012)
   activeResultsTab: 'monthly',  // 'monthly' | 'setup'
   openAccordion:    null,        // id of currently open accordion section
   openInfoPanels:   {},          // {sectionId: bool}
@@ -59,6 +61,48 @@ function initInput() {
   document.getElementById('btn-calculate').addEventListener('click', showResults);
   document.getElementById('btn-back').addEventListener('click', showInput);
   document.getElementById('btn-print').addEventListener('click', () => window.print());
+
+  // IMP-012: BG housing type toggle + editable cost field
+  const bgHousingBtns = document.querySelectorAll('.bg-housing-btn');
+  const bgHousingInput = document.getElementById('input-bg-housing-cost');
+  const bgHousingNote  = document.getElementById('bg-housing-note');
+
+  const bgHousingNotes = {
+    own:      'Включва: данък сгради ~€10, такса смет ~€8, вход/поддръжка ~€17. Променете сумата ако вашите разходи се различават.',
+    mortgage: 'Въведете месечната си ипотечна вноска в евро.',
+    rent:     'Въведете месечния си наем в евро.'
+  };
+
+  function updateBgHousingUI() {
+    if (state.bgHousingType === 'own') {
+      bgHousingInput.value = state.bgHousingCost || 35;
+      bgHousingInput.placeholder = '35';
+    } else {
+      bgHousingInput.value = state.bgHousingCost > 0 && state.bgHousingType !== 'own'
+        ? state.bgHousingCost : '';
+      bgHousingInput.placeholder = '0';
+    }
+    if (bgHousingNote) bgHousingNote.textContent = bgHousingNotes[state.bgHousingType] || '';
+  }
+
+  bgHousingBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      bgHousingBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.bgHousingType = btn.dataset.bghousing;
+      state.bgHousingCost = state.bgHousingType === 'own' ? 35 : 0;
+      updateBgHousingUI();
+    });
+  });
+
+  if (bgHousingInput) {
+    bgHousingInput.addEventListener('input', e => {
+      const val = parseFloat(e.target.value);
+      state.bgHousingCost = (!isNaN(val) && val >= 0) ? val : 0;
+    });
+  }
+
+  updateBgHousingUI();
 
   setDefaultHousingSub();
 
@@ -110,6 +154,11 @@ function showResults() {
 function showInput() {
   document.getElementById('screen-results').classList.remove('active');
   document.getElementById('screen-input').classList.add('active');
+  // Hide sticky bar on input screen
+  const bar   = document.getElementById('sticky-total-bar');
+  const popup = document.getElementById('sticky-floor-popup');
+  if (bar)   bar.style.display   = 'none';
+  if (popup) popup.style.display = 'none';
   window.scrollTo(0, 0);
 }
 
@@ -146,6 +195,14 @@ function scaleValue(base, cat, currency) {
     }
     case 'variable':
       return base * (size / pivot);
+    case 'household-tier': {
+      if (currency === 'aud') {
+        if (size <= 1) return cat.perth_aud_1 ?? base;
+        if (size === 2) return cat.perth_aud_2 ?? base;
+        return cat.perth_aud_3plus ?? base;
+      }
+      return base;
+    }
     default:
       return base;
   }
@@ -162,6 +219,8 @@ function visibleCategories() {
     if (cat.housing_type && cat.housing_type !== state.housingType) return false;
     if (cat.visa_type    && cat.visa_type    !== state.visaType)    return false;
     if (cat.is_pets && !state.hasPets) return false;
+    // IMP-011: ownership costs row only visible for owner/mortgage housing
+    if (cat.flag === 'ownership' && state.housingType === 'renter') return false;
     return true;
   });
 }
@@ -324,16 +383,20 @@ function buildAccordionItem(id, label, summaryBg, summaryPerth, bodyFn) {
 
 // ── Standard single-category section ─────────────────────────
 function buildStandardSection(cat) {
-  const bgEur = scaleBgEur(cat);
+  const bgEur = cat.bg_eur !== null ? scaleBgEur(cat) : null;
   const pAud  = scaleAud(cat);
 
   return buildAccordionItem(
     cat.id,
     cat.label_bg,
-    fmtEur(bgEur),
+    bgEur !== null ? fmtEur(bgEur) : '—',
     fmtAud(pAud),
     body => {
-      body.appendChild(buildNumBlock(cat.id, bgEur, pAud, cat));
+      if (bgEur !== null) {
+        body.appendChild(buildNumBlock(cat.id, bgEur, pAud, cat));
+      } else {
+        body.appendChild(buildNumBlockPerthOnly(pAud));
+      }
       if (cat.note_bg || cat.note_perth) {
         body.appendChild(buildInfoToggle(cat.id));
         body.appendChild(buildInfoPanel(cat.id, cat.note_bg, cat.note_perth));
@@ -346,14 +409,14 @@ function buildStandardSection(cat) {
 function buildHousingSection(housingCats) {
   const activeSub = activeHousingSub();
   const activeCat = housingCats.find(c => c.housing_sub === activeSub) || housingCats[0];
-  const bgEur     = scaleBgEur(activeCat);
+  const bgEur     = activeCat.bg_eur !== null ? scaleBgEur(activeCat) : null;
   const pAud      = scaleAud(activeCat);
   const label     = state.housingType === 'renter' ? 'Жилище (наем)' : 'Жилище (ипотека)';
 
   return buildAccordionItem(
     'housing',
     label,
-    fmtEur(bgEur),
+    bgEur !== null ? fmtEur(bgEur) : '—',
     fmtAud(pAud),
     body => {
       // Sub-toggle
@@ -377,12 +440,12 @@ function buildHousingSection(housingCats) {
       });
       body.appendChild(toggle);
 
-      // Number block for active sub
-      body.appendChild(buildNumBlock('housing', bgEur, pAud, activeCat));
+      // Number block — Perth-only since BG housing moved to input screen
+      body.appendChild(buildNumBlockPerthOnly(pAud));
 
-      if (activeCat.note_bg || activeCat.note_perth) {
+      if (activeCat.note_perth) {
         body.appendChild(buildInfoToggle('housing'));
-        body.appendChild(buildInfoPanel('housing', activeCat.note_bg, activeCat.note_perth));
+        body.appendChild(buildInfoPanel('housing', null, activeCat.note_perth));
       }
     }
   );
@@ -673,6 +736,28 @@ function buildNumBlock(catId, bgEur, pAud, cat) {
   return row;
 }
 
+// ── Perth-only number block (no BG column) ────────────────────
+function buildNumBlockPerthOnly(pAud) {
+  const pEur = audToEur(pAud);
+  const row  = el('div', 'num-block-row num-block-row-perth-only');
+
+  const perthBlock = el('div', 'num-block');
+  const perthLabel = el('div', 'num-block-label');
+  perthLabel.textContent = 'Пърт';
+  const perthVal = el('div', 'num-block-value perth-val');
+  perthVal.textContent = fmtAud(pAud);
+  perthBlock.appendChild(perthLabel);
+  perthBlock.appendChild(perthVal);
+  if (pEur) {
+    const eurSub = el('div', 'num-block-eur');
+    eurSub.textContent = '≈ ' + fmtEur(pEur);
+    perthBlock.appendChild(eurSub);
+  }
+  row.appendChild(perthBlock);
+
+  return row;
+}
+
 function buildNumBlockKindy(idx, bgEur, pAud, pEur) {
   const row = el('div', 'num-block-row');
 
@@ -791,9 +876,13 @@ function calcTotals() {
     if (cat.grocery && cat.grocery_option !== state.groceryChoice) return;
     if (cat.transport && cat.transport_option !== state.transportChoice) return;
     if (cat.housing_type && cat.housing_sub !== activeHousingSub()) return;
-    bgEur    += scaleBgEur(cat);
+    // IMP-014: skip null bg_eur rows from BG total (housing rows, ownership costs)
+    if (cat.bg_eur !== null) bgEur += scaleBgEur(cat);
     perthAud += scaleAud(cat);
   });
+
+  // IMP-012: add self-reported BG housing cost
+  bgEur += state.bgHousingCost || 0;
 
   if (state.hasKids && state.householdSize > 1) {
     const kc = CFG.kids_config;
@@ -1004,6 +1093,11 @@ function buildFooter() {
     </p>
     <p>${CFG.meta.disclaimer}</p>
   `;
+  if (CFG.meta.buffer_note) {
+    const bufNote = el('p', 'footer-buffer-note');
+    bufNote.textContent = CFG.meta.buffer_note;
+    div.appendChild(bufNote);
+  }
   return div;
 }
 
