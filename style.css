@@ -12,9 +12,10 @@
   --text:        #1a1a1a;
   --text-muted:  #6b7280;
   --border:      #d1d9e6;
-  --shadow:      0 2px 8px rgba(2, 82, 163, 0.10);
+  --shadow:      0 1px 2px rgba(2, 82, 163, 0.06), 0 6px 18px rgba(2, 82, 163, 0.08);
   --radius:      12px;
   --radius-sm:   8px;
+  --track:       #e9eef6;
 }
 
 /* ── Reset & base ────────────────────────────────────────── */
@@ -30,6 +31,17 @@ body {
   min-height: 100dvh;
   line-height: 1.5;
 }
+
+button { -webkit-tap-highlight-color: transparent; }
+
+/* ── Inline icon helper (SVG) ────────────────────────────── */
+.ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+.ico svg { width: 1em; height: 1em; display: block; }
 
 /* ── Screen switching ────────────────────────────────────── */
 .screen { display: none; }
@@ -167,69 +179,70 @@ body {
   flex-shrink: 0;
 }
 
-/* ── Segment control (1/2/3/4) ──────────────────────────── */
+/* ── Segment control (1/2/3/4) — filled track + pill ─────── */
 .segment-control {
   display: flex;
-  border: 1.5px solid var(--border);
+  gap: 4px;
+  background: var(--track);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  padding: 4px;
 }
 
 .seg-btn {
   flex: 1;
-  padding: 10px 0;
+  padding: 9px 0;
   border: none;
   background: none;
+  border-radius: 6px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  border-right: 1.5px solid var(--border);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.08s;
 }
-
-.seg-btn:last-child { border-right: none; }
 
 .seg-btn.active {
   background: var(--blue);
   color: white;
   font-weight: 700;
+  box-shadow: 0 1px 3px rgba(2, 82, 163, 0.30);
 }
 
-.seg-btn:not(.active):hover { background: var(--bg); }
+.seg-btn:not(.active):hover { color: var(--text); }
+.seg-btn:active { transform: scale(0.96); }
 
-/* ── Toggle control (2-option) ───────────────────────────── */
+/* ── Toggle control (2-option) — filled track + pill ─────── */
 .toggle-control {
   display: flex;
-  border: 1.5px solid var(--border);
+  gap: 4px;
+  background: var(--track);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  padding: 4px;
 }
 
 .tog-btn {
   flex: 1;
-  padding: 10px 8px;
+  padding: 9px 8px;
   border: none;
   background: none;
+  border-radius: 6px;
   font-size: 0.88rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  border-right: 1.5px solid var(--border);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.08s;
   text-align: center;
   line-height: 1.3;
 }
 
-.tog-btn:last-child { border-right: none; }
-
 .tog-btn.active {
   background: var(--blue);
   color: white;
-  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(2, 82, 163, 0.30);
 }
 
-.tog-btn:not(.active):hover { background: var(--bg); }
+.tog-btn:not(.active):hover { color: var(--text); }
+.tog-btn:active { transform: scale(0.96); }
 
 /* ── Rate input ──────────────────────────────────────────── */
 .rate-row {
@@ -313,11 +326,13 @@ body {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.08s;
 }
 
 .btn-back:hover,
 .btn-print:hover { background: rgba(255,255,255,0.25); }
+.btn-back:active,
+.btn-print:active { transform: scale(0.96); }
 
 /* ── Results meta bar (compressed) ──────────────────────── */
 .results-meta {
@@ -339,7 +354,7 @@ body {
 .meta-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   white-space: nowrap;
   font-weight: 600;
   color: white;
@@ -347,8 +362,16 @@ body {
 }
 
 .meta-item .meta-icon {
-  opacity: 1;
+  opacity: 0.9;
   font-style: normal;
+  display: inline-flex;
+  align-items: center;
+}
+
+.meta-item .meta-icon svg {
+  width: 15px;
+  height: 15px;
+  display: block;
 }
 
 .meta-sep {
@@ -356,37 +379,44 @@ body {
   flex-shrink: 0;
 }
 
-/* ── Results tab bar ─────────────────────────────────────── */
+/* ── Results tab bar — sliding indicator ─────────────────── */
 .results-tab-bar {
   display: flex;
-  background: var(--surface);
-  border-bottom: 2px solid var(--border);
   position: sticky;
   top: 44px;
   z-index: 15;
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
 }
 
 .results-tab-btn {
   flex: 1;
-  padding: 12px 8px;
+  padding: 13px 6px;
   border: none;
   background: none;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.18s, transform 0.08s;
   text-align: center;
+  white-space: nowrap;
 }
 
-.results-tab-btn.active {
-  color: var(--blue);
-  border-bottom-color: var(--blue);
-}
-
+.results-tab-btn.active { color: var(--blue); }
 .results-tab-btn:not(.active):hover { color: var(--text); }
+.results-tab-btn:active { transform: scale(0.97); }
+
+.results-tab-indicator {
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  height: 3px;
+  background: var(--blue);
+  border-radius: 3px 3px 0 0;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
 
 /* ── Results content area ────────────────────────────────── */
 .results-main {
@@ -448,6 +478,7 @@ body {
   font-size: 0.82rem;
   font-weight: 700;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .acc-num-bg   { color: var(--text-muted); }
@@ -461,12 +492,15 @@ body {
 
 .accordion-chevron {
   font-style: normal;
-  font-size: 0.75rem;
   color: var(--text-muted);
   transition: transform 0.2s;
   flex-shrink: 0;
   margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
 }
+
+.accordion-chevron svg { width: 16px; height: 16px; display: block; }
 
 .accordion-item.open .accordion-chevron { transform: rotate(180deg); }
 
@@ -508,6 +542,7 @@ body {
   font-weight: 800;
   line-height: 1;
   color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .num-block-value.perth-val { color: var(--blue); }
@@ -516,6 +551,7 @@ body {
   font-size: 0.75rem;
   color: var(--text-muted);
   margin-top: 4px;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Editable BG number block ────────────────────────────── */
@@ -560,6 +596,7 @@ body {
   -moz-appearance: textfield;
   appearance: textfield;
   font-family: inherit;
+  font-variant-numeric: tabular-nums;
 }
 
 .bg-edit-input-large::-webkit-inner-spin-button,
@@ -584,7 +621,7 @@ body {
   border-radius: 20px;
   padding: 3px 10px;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background 0.12s, border-color 0.12s, transform 0.08s;
   margin-top: 4px;
 }
 
@@ -597,6 +634,8 @@ body {
   background: #e8f0fb;
   border-color: var(--blue);
 }
+
+.info-toggle-btn:active { transform: scale(0.97); }
 
 .info-panel {
   display: none;
@@ -628,28 +667,20 @@ body {
 /* Sub-toggle inside accordion (housing / grocery / transport) ── */
 .acc-sub-toggle {
   display: flex;
-  border: 1.5px solid var(--border);
+  gap: 4px;
+  background: var(--track);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  padding: 4px;
   margin-top: 14px;
 }
 
-/* Housing has 4 options — allow wrap to 2×2 on narrow screens */
+/* Housing has 4 options — wrap to 2×2 on narrow screens */
 .housing-sub-toggle {
   flex-wrap: wrap;
 }
 
 .housing-sub-toggle .acc-sub-btn {
-  flex-basis: 50%;
-  border-bottom: 1.5px solid var(--border);
-}
-
-.housing-sub-toggle .acc-sub-btn:nth-child(even) {
-  border-right: none;
-}
-
-.housing-sub-toggle .acc-sub-btn:nth-last-child(-n+2) {
-  border-bottom: none;
+  flex-basis: calc(50% - 2px);
 }
 
 .acc-sub-btn {
@@ -657,25 +688,24 @@ body {
   padding: 9px 8px;
   border: none;
   background: none;
+  border-radius: 6px;
   font-size: 0.84rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  border-right: 1.5px solid var(--border);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.08s;
   text-align: center;
   line-height: 1.3;
 }
 
-.acc-sub-btn:last-child { border-right: none; }
-
 .acc-sub-btn.active {
   background: var(--blue);
   color: white;
-  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(2, 82, 163, 0.30);
 }
 
-.acc-sub-btn:not(.active):hover { background: var(--bg); }
+.acc-sub-btn:not(.active):hover { color: var(--text); }
+.acc-sub-btn:active { transform: scale(0.96); }
 
 /* Perth label hint for housing sub-rows */
 .acc-perth-hint {
@@ -774,7 +804,7 @@ body {
   background: white;
   color: var(--green);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, transform 0.08s;
   white-space: nowrap;
   line-height: 1.6;
 }
@@ -783,6 +813,8 @@ body {
   background: var(--green);
   color: white;
 }
+
+.kids-add-btn:active { transform: scale(0.96); }
 
 .kids-remove-btn {
   font-size: 0.78rem;
@@ -793,7 +825,7 @@ body {
   background: white;
   color: var(--red);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, transform 0.08s;
   line-height: 1.6;
 }
 
@@ -802,6 +834,8 @@ body {
   color: white;
   border-color: var(--red);
 }
+
+.kids-remove-btn:active { transform: scale(0.96); }
 
 /* ── Kids BG toggle (Общинска / Частна) ──────────────────── */
 .kids-bg-toggle {
@@ -880,6 +914,7 @@ body {
   font-weight: 800;
   line-height: 1.15;
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .sticky-total-divider {
@@ -925,19 +960,19 @@ body {
 
 .sticky-floor-popup.visible { display: block; }
 
-/* ── FIRST YEAR TAB ──────────────────────────────────────── */
+/* ── SAVINGS / SETUP TABS ────────────────────────────────── */
 .setup-section {
   margin-bottom: 16px;
 }
 
 .setup-tab-header {
-  background: #fff8f0;
-  border: 1.5px solid #ffcc99;
+  background: #eef3fc;
+  border: 1px solid #cfe0f5;
   border-radius: var(--radius);
   padding: 12px 16px;
   margin-bottom: 14px;
   font-size: 0.84rem;
-  color: var(--orange-dark);
+  color: var(--blue-dark);
   line-height: 1.5;
 }
 
@@ -945,7 +980,7 @@ body {
   display: block;
   font-size: 0.88rem;
   margin-bottom: 3px;
-  color: var(--orange-dark);
+  color: var(--blue);
 }
 
 .setup-table-wrap {
@@ -962,14 +997,15 @@ body {
 }
 
 .setup-table thead {
-  background: var(--orange);
-  color: white;
+  background: var(--surface);
+  color: var(--blue);
+  border-bottom: 2px solid var(--blue);
 }
 
 .setup-table thead th {
   padding: 10px 12px;
   font-size: 0.76rem;
-  font-weight: 600;
+  font-weight: 700;
   text-align: right;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -979,7 +1015,7 @@ body {
 
 .setup-table tbody tr { border-bottom: 1px solid var(--border); }
 .setup-table tbody tr:last-child { border-bottom: none; }
-.setup-table tbody tr:hover { background: #fff8f0; }
+.setup-table tbody tr:hover { background: #f5f8ff; }
 
 .setup-table td {
   padding: 10px 12px;
@@ -990,8 +1026,9 @@ body {
 .setup-table td:first-child { text-align: left; }
 
 .setup-table tfoot {
-  background: var(--orange);
-  color: white;
+  background: #eef3fc;
+  color: var(--text);
+  border-top: 2px solid var(--blue);
 }
 
 .setup-table tfoot td {
@@ -1094,12 +1131,15 @@ body {
 
 .input-section-chevron {
   font-style: normal;
-  font-size: 0.75rem;
   color: var(--text-muted);
   transition: transform 0.2s;
   flex-shrink: 0;
   margin-left: 2px;
+  display: inline-flex;
+  align-items: center;
 }
+
+.input-section-chevron svg { width: 16px; height: 16px; display: block; }
 
 .input-section.open .input-section-chevron { transform: rotate(180deg); }
 
@@ -1183,11 +1223,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background 0.12s, border-color 0.12s, transform 0.08s;
   font-weight: 700;
 }
 
 .input-counter-btn:hover { background: #e8f0fb; border-color: var(--blue); }
+.input-counter-btn:active { transform: scale(0.92); }
 .input-counter-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .input-counter-value {
@@ -1196,6 +1237,7 @@ body {
   min-width: 24px;
   text-align: center;
   color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Confirm button for numeric input fields */
@@ -1208,11 +1250,12 @@ body {
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.08s;
   flex-shrink: 0;
 }
 
 .btn-confirm-input:hover { background: var(--blue-dark); }
+.btn-confirm-input:active { transform: scale(0.97); }
 
 /* Numeric input row (BG housing cost, exchange rate) */
 .input-num-row {
@@ -1244,6 +1287,7 @@ body {
   -moz-appearance: textfield;
   appearance: textfield;
   font-family: inherit;
+  font-variant-numeric: tabular-nums;
 }
 
 .input-num-field::-webkit-inner-spin-button,
@@ -1268,6 +1312,163 @@ body {
 .input-section-body .field-label:first-of-type { margin-top: 10px; }
 .input-section-body .field-hint  { margin-top: 8px; }
 
+/* ── Savings module (v0.7) ───────────────────────────────── */
+.savings-table { width: 100%; }
+
+.savings-table td,
+.savings-table th {
+  vertical-align: top;
+  padding: 10px 8px;
+}
+
+.savings-row-label { width: 55%; }
+
+.savings-row-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.savings-row-eur {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  opacity: 0.65;
+  font-size: 0.85em;
+}
+
+.savings-section-header td {
+  background: var(--bg);
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  padding: 8px 8px 6px;
+  color: var(--blue);
+  border-top: 2px solid var(--blue);
+}
+
+.savings-total-row td {
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+  padding-top: 12px;
+}
+
+.savings-total-row:first-of-type td {
+  border-top: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.savings-input-row td { vertical-align: middle; }
+
+.savings-user-input-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.savings-input-sym {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.9em;
+}
+
+.savings-user-input {
+  width: 90px;
+  text-align: right;
+  font-size: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+}
+
+.savings-user-input:focus {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+.savings-toggle-row td {
+  vertical-align: middle;
+  padding-top: 12px;
+  padding-bottom: 4px;
+}
+
+.savings-toggle { justify-content: flex-end; }
+
+.savings-toggle.toggle-control {
+  flex: none;
+  width: auto;
+  display: inline-flex;
+}
+
+.savings-toggle .tog-btn {
+  flex: none;
+  min-width: 56px;
+  padding: 5px 14px;
+  font-size: 0.82rem;
+}
+
+.savings-incomplete-hint {
+  font-size: 0.82rem;
+  color: var(--red);
+  padding: 8px 12px;
+  margin: 8px 0 0;
+}
+
+/* ── Grand total banner (v0.7) ───────────────────────────── */
+.savings-grand-banner {
+  background: var(--blue);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin: 0 0 12px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.savings-grand-label {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+.savings-grand-value-wrap {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  margin: 4px 0 2px;
+  flex-wrap: wrap;
+}
+
+.savings-grand-aud {
+  font-size: 1.65rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.savings-grand-incomplete { opacity: 0.7; }
+
+.savings-grand-eur {
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+.savings-grand-sub {
+  font-size: 0.74rem;
+  opacity: 0.8;
+}
+
+/* Print-only tab headings */
+.print-tab-heading { display: none; }
+
 /* ── Print styles ────────────────────────────────────────── */
 @media print {
   :root { --shadow: none; }
@@ -1275,6 +1476,7 @@ body {
   .no-print,
   .results-header,
   .results-tab-bar,
+  .results-tab-indicator,
   .sticky-total,
   .sticky-floor-popup,
   .btn-back,
@@ -1289,7 +1491,21 @@ body {
   .screen { display: none; }
   .screen#screen-results { display: block !important; }
 
-  .results-tab-panel { display: block !important; }
+  .results-tab-panel {
+    display: block !important;
+    page-break-inside: avoid;
+    margin-bottom: 18px;
+  }
+
+  .print-tab-heading {
+    display: block;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 18px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--blue);
+    color: var(--blue);
+  }
 
   .results-main { padding: 0; max-width: 100%; }
 
@@ -1302,28 +1518,47 @@ body {
     font-size: 9pt;
   }
 
+  .savings-grand-banner {
+    background: #fff !important;
+    color: #000 !important;
+    border: 2px solid var(--blue);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .savings-grand-label,
+  .savings-grand-sub { opacity: 1; }
+
+  .savings-user-input { border: none; padding: 0; }
+  .savings-toggle .tog-btn:not(.active) { display: none; }
+
   .accordion-body { display: block !important; }
   .accordion-item { box-shadow: none; border: 1pt solid #ccc; margin-bottom: 8pt; }
 
   .setup-table-wrap,
   .calibration-footer { box-shadow: none; border: 1pt solid #ccc; }
 
-  .setup-table thead,
+  .setup-table thead {
+    background: var(--surface) !important;
+    color: var(--blue) !important;
+    border-bottom: 2pt solid var(--blue);
+  }
   .setup-table tfoot {
-    background: var(--orange) !important;
+    background: #eef3fc !important;
+    color: #000 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    color: white !important;
   }
 
   .setup-section { page-break-before: always; }
+  #panel-predeparture.results-tab-panel { page-break-before: avoid; }
 }
 
 /* ── Responsive tweaks ───────────────────────────────────── */
 @media (max-width: 400px) {
-  .tog-btn        { font-size: 0.80rem; padding: 10px 4px; }
-  .results-tab-btn { font-size: 0.82rem; padding: 10px 4px; }
+  .tog-btn        { font-size: 0.80rem; padding: 9px 4px; }
+  .results-tab-btn { font-size: 0.78rem; padding: 12px 3px; }
   .sticky-total-value { font-size: 0.95rem; }
   .num-block-value { font-size: 1.2rem; }
   .bg-edit-input-large { font-size: 1.2rem; width: 76px; }
+  .savings-grand-aud { font-size: 1.4rem; }
 }

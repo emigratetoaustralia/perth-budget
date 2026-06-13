@@ -17,15 +17,30 @@ const state = {
   bgOverrides:      {},
   bgHousingType:    'own',    // 'own' | 'mortgage' | 'rent'
   bgHousingCost:    35,       // EUR/month — default for owner (IMP-012)
-  activeResultsTab:  'monthly',  // 'monthly' | 'setup'
+  activeResultsTab:  'predeparture', // 'predeparture' | 'arrival' | 'monthly'
   openAccordion:     null,       // id of currently open accordion section
   openInfoPanels:    {},         // {sectionId: bool}
   floorPopupOpen:    false,
-  inputOpenSection:  1,          // which input accordion section is open (1–5)
+  inputOpenSection:  1,          // which input accordion section is open (1-5)
   inputComplete:     { 1: false, 2: false, 3: false, 4: false, 5: false },
+  // Savings module state
+  savingsRentalWaived:     false,
+  savingsCar:              true,
+  savingsSkillsAssessment: null,   // user input AUD
+  savingsFlights:          null,   // user input AUD
+  savingsCarCost:          null,   // user input AUD
 };
 
 let CFG = null;
+
+// ── Inline SVG icons (replace emoji chrome — modern, device-consistent) ──
+const ICONS = {
+  household: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  home:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  visa:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+  rate:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+  chevron:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+};
 
 // ── Boot ─────────────────────────────────────────────────────
 fetch('data.json')
@@ -106,7 +121,7 @@ function buildInputSection(n, label, bodyFn) {
   summary.textContent = isComplete ? (state.inputComplete[n + '_summary'] || '') : '';
 
   const chevron = el('i', 'input-section-chevron');
-  chevron.textContent = '▼';
+  chevron.innerHTML = ICONS.chevron;
 
   header.appendChild(labelEl);
   header.appendChild(summary);
@@ -628,19 +643,31 @@ function renderResults() {
   container.innerHTML = '';
 
   container.appendChild(buildMeta());
+  container.appendChild(buildSavingsGrandBanner());
   container.appendChild(buildResultsTabBar());
 
+  // Pre-departure panel
+  const predeparturePanel = el('div', 'results-tab-panel' + (state.activeResultsTab === 'predeparture' ? ' active' : ''));
+  predeparturePanel.id = 'panel-predeparture';
+  predeparturePanel.appendChild(buildPrintHeading('Преди заминаване'));
+  predeparturePanel.appendChild(buildPreDepartureSection());
+  container.appendChild(predeparturePanel);
+
+  // Arrival panel
+  const arrivalPanel = el('div', 'results-tab-panel' + (state.activeResultsTab === 'arrival' ? ' active' : ''));
+  arrivalPanel.id = 'panel-arrival';
+  arrivalPanel.appendChild(buildPrintHeading('При пристигане'));
+  arrivalPanel.appendChild(buildArrivalSection());
+  container.appendChild(arrivalPanel);
+
+  // Monthly panel
   const monthlyPanel = el('div', 'results-tab-panel' + (state.activeResultsTab === 'monthly' ? ' active' : ''));
   monthlyPanel.id = 'panel-monthly';
+  monthlyPanel.appendChild(buildPrintHeading('Месечни разходи'));
   monthlyPanel.appendChild(buildAccordionList());
   container.appendChild(monthlyPanel);
 
-  const setupPanel = el('div', 'results-tab-panel' + (state.activeResultsTab === 'setup' ? ' active' : ''));
-  setupPanel.id = 'panel-setup';
-  setupPanel.appendChild(buildSetupSection());
-  container.appendChild(setupPanel);
-
-  // Footer visible below both tabs
+  // Footer visible below all tabs
   container.appendChild(buildFooter());
 
   // Sticky total bar (monthly tab only)
@@ -653,6 +680,7 @@ function renderResults() {
   wireTabEvents(container);
   wireStickyFloorEvent(container);
   wireBgEditEvents(container);
+  wireSavingsEvents(container);
   updateStickyVisibility();
 }
 
@@ -666,25 +694,33 @@ function buildMeta() {
   const div = el('div', 'results-meta no-print');
   div.title = 'Промени настройките';
   div.innerHTML = `
-    <span class="meta-item"><i class="meta-icon">👨‍👩‍👦</i> ${sizeLabel}</span>
+    <span class="meta-item"><i class="meta-icon">${ICONS.household}</i> ${sizeLabel}</span>
     <span class="meta-sep">·</span>
-    <span class="meta-item"><i class="meta-icon">🏠</i> ${hsLabel}</span>
+    <span class="meta-item"><i class="meta-icon">${ICONS.home}</i> ${hsLabel}</span>
     <span class="meta-sep">·</span>
-    <span class="meta-item"><i class="meta-icon">📄</i> ${visaLabel}</span>
+    <span class="meta-item"><i class="meta-icon">${ICONS.visa}</i> ${visaLabel}</span>
     <span class="meta-sep">·</span>
-    <span class="meta-item"><i class="meta-icon">💱</i> ${rateLabel}</span>
+    <span class="meta-item"><i class="meta-icon">${ICONS.rate}</i> ${rateLabel}</span>
   `;
   div.addEventListener('click', showInput);
   return div;
 }
 
-// ── Results tab bar ───────────────────────────────────────────
+// ── Results tab bar — 3 tabs + sliding indicator ─────────────
 function buildResultsTabBar() {
+  const tabs = [
+    ['predeparture', 'Преди заминаване'],
+    ['arrival',      'При пристигане'],
+    ['monthly',      'Месечни разходи']
+  ];
+  const idx = Math.max(0, tabs.findIndex(t => t[0] === state.activeResultsTab));
+
   const bar = el('div', 'results-tab-bar no-print');
-  bar.innerHTML = `
-    <button class="results-tab-btn${state.activeResultsTab === 'monthly' ? ' active' : ''}" data-tab="monthly">Месечни разходи</button>
-    <button class="results-tab-btn${state.activeResultsTab === 'setup'   ? ' active' : ''}" data-tab="setup">Първа година</button>
-  `;
+  bar.innerHTML =
+    tabs.map(([k, label]) =>
+      `<button class="results-tab-btn${state.activeResultsTab === k ? ' active' : ''}" data-tab="${k}">${label}</button>`
+    ).join('') +
+    `<span class="results-tab-indicator" style="width:${(100 / tabs.length).toFixed(4)}%;transform:translateX(${idx * 100}%)"></span>`;
   return bar;
 }
 
@@ -751,7 +787,7 @@ function buildAccordionItem(id, label, summaryBg, summaryPerth, bodyFn) {
   `;
 
   const chevron = el('i', 'accordion-chevron');
-  chevron.textContent = '▼';
+  chevron.innerHTML = ICONS.chevron;
 
   header.appendChild(labelEl);
   header.appendChild(summary);
@@ -1251,6 +1287,509 @@ function buildInfoPanel(id, noteBg, notePerth) {
   return panel;
 }
 
+// ── Savings helpers ───────────────────────────────────────────
+
+// Calculate visa fee from state
+function calcVisaFee() {
+  const vf       = CFG.savings_module.visa_fees;
+  const children = state.kindyChildren.length + state.schoolChildren.length;
+  const adults   = Math.max(1, state.householdSize - children);
+  const extraAdults = Math.max(0, adults - 1);
+
+  if (state.visaType === 'pr') {
+    return vf.pr_primary
+      + extraAdults * vf.pr_additional_adult
+      + children   * vf.pr_child;
+  } else {
+    return vf.v482_primary
+      + extraAdults * vf.v482_additional_adult
+      + children   * vf.v482_child;
+  }
+}
+
+// Calculate visa fee breakdown string for ⓘ note
+function calcVisaFeeBreakdown() {
+  const vf       = CFG.savings_module.visa_fees;
+  const children = state.kindyChildren.length + state.schoolChildren.length;
+  const adults   = Math.max(1, state.householdSize - children);
+  const extraAdults = Math.max(0, adults - 1);
+  const lines = [];
+
+  if (state.visaType === 'pr') {
+    lines.push(`Основен кандидат: ${fmtAud(vf.pr_primary)}`);
+    if (extraAdults > 0) lines.push(`${extraAdults} допълнителен/ни възрастен/ни × ${fmtAud(vf.pr_additional_adult)}: ${fmtAud(extraAdults * vf.pr_additional_adult)}`);
+    if (children   > 0) lines.push(`${children} дете/деца × ${fmtAud(vf.pr_child)}: ${fmtAud(children * vf.pr_child)}`);
+  } else {
+    lines.push(`Основен кандидат: ${fmtAud(vf.v482_primary)}`);
+    if (extraAdults > 0) lines.push(`${extraAdults} допълнителен/ни възрастен/ни × ${fmtAud(vf.v482_additional_adult)}: ${fmtAud(extraAdults * vf.v482_additional_adult)}`);
+    if (children   > 0) lines.push(`${children} дете/деца × ${fmtAud(vf.v482_child)}: ${fmtAud(children * vf.v482_child)}`);
+  }
+  return lines.join(' · ');
+}
+
+// Calculate bond + advance from housing sub-type
+function calcBondAndAdvance() {
+  if (state.housingType === 'owner') return 0;
+  const rb  = CFG.savings_module.rental_bond;
+  const sub = state.housingSubRent;
+  const weekly = rb.weekly_rent[sub] ?? rb.weekly_rent['3bed'];
+  return weekly * (rb.bond_weeks + rb.advance_weeks);
+}
+
+// Single source for fixed arrival values — read from data.json by id
+function smArrivalAud(id) {
+  const item = CFG.savings_module.arrival.find(i => i.id === id);
+  return item && typeof item.aud === 'number' ? item.aud : 0;
+}
+function smArrivalPerAdult(id) {
+  const item = CFG.savings_module.arrival.find(i => i.id === id);
+  return item && typeof item.per_adult === 'number' ? item.per_adult : 0;
+}
+
+// Number of adults derived from household + children
+function adultCount() {
+  const children = state.kindyChildren.length + state.schoolChildren.length;
+  return Math.max(1, state.householdSize - children);
+}
+
+// ── Pure total calculators (used by render AND grand banner) ──
+// Each returns { total, complete }. `complete` is false when a
+// required user-input value is still missing — so totals are never
+// shown as a misleadingly low "finished" number (Fix 3).
+function calcPreDeparture() {
+  const sm = CFG.savings_module;
+  let total = calcVisaFee();
+  let complete = true;
+
+  if (state.visaType === 'pr') {
+    if (state.savingsSkillsAssessment !== null) total += state.savingsSkillsAssessment;
+    else complete = false;
+    total += sm.visa_fees.wa_nomination;
+  }
+
+  if (state.savingsFlights !== null) total += state.savingsFlights;
+  else complete = false;
+
+  return { total, complete };
+}
+
+function calcArrival() {
+  let total = 0;
+  let complete = true;
+
+  // Bond + premium only for renters who are not staying with family (Fix 4)
+  if (state.housingType === 'renter' && !state.savingsRentalWaived) {
+    total += calcBondAndAdvance();
+    total += smArrivalAud('no_ref_premium');
+  }
+
+  total += smArrivalAud('furniture');
+  total += smArrivalAud('white_goods');
+  total += smArrivalAud('kitchenware');
+  total += adultCount() * smArrivalPerAdult('sim');
+
+  if (state.savingsCar) {
+    if (state.savingsCarCost !== null) total += state.savingsCarCost;
+    else complete = false;
+    total += smArrivalAud('car_insurance');
+    total += smArrivalAud('licence');
+  }
+
+  if (state.visaType === '482' && state.schoolChildren.length > 0) {
+    total += smArrivalAud('school_registration');
+  }
+
+  return { total, complete };
+}
+
+function calcBuffer() {
+  const floor = CFG.floor_costs[String(state.householdSize)]?.aud ?? 0;
+  return floor * CFG.savings_module.emergency_buffer.multiplier;
+}
+
+function calcGrandTotal() {
+  const pre = calcPreDeparture();
+  const arr = calcArrival();
+  return {
+    total:    pre.total + arr.total + calcBuffer(),
+    complete: pre.complete && arr.complete
+  };
+}
+
+// Build a savings table row — plain
+function buildSavingsRow(labelText, audValue, noteText, extraClass) {
+  const tr = el('tr', extraClass || '');
+  const tdLabel = el('td', 'savings-row-label');
+
+  const labelDiv = el('div', 'cat-label');
+  labelDiv.textContent = labelText;
+  tdLabel.appendChild(labelDiv);
+
+  if (noteText) {
+    const noteDiv = el('div', 'setup-note');
+    noteDiv.textContent = noteText;
+    tdLabel.appendChild(noteDiv);
+  }
+
+  tr.appendChild(tdLabel);
+
+  const tdVal = el('td', 'savings-row-value');
+  tdVal.textContent = audValue !== null ? fmtAud(audValue) : '—';
+  tr.appendChild(tdVal);
+
+  if (state.eurPerAud) {
+    const tdEur = el('td', 'savings-row-eur');
+    tdEur.textContent = audValue !== null ? `~${fmtEur(audValue * state.eurPerAud)}` : '—';
+    tr.appendChild(tdEur);
+  }
+
+  return tr;
+}
+
+// Build a savings user-input row
+function buildSavingsInputRow(labelText, hintText, stateKey, noteText) {
+  const tr = el('tr', 'savings-input-row');
+  const tdLabel = el('td', 'savings-row-label');
+
+  const labelDiv = el('div', 'cat-label');
+  labelDiv.textContent = labelText;
+  tdLabel.appendChild(labelDiv);
+
+  if (noteText) {
+    const noteDiv = el('div', 'setup-note');
+    noteDiv.textContent = noteText;
+    tdLabel.appendChild(noteDiv);
+  }
+
+  tr.appendChild(tdLabel);
+
+  const tdInput = el('td', 'savings-row-value');
+  const inputWrap = el('div', 'savings-user-input-wrap');
+  const sym = el('span', 'savings-input-sym');
+  sym.textContent = '$';
+  const input = el('input', 'savings-user-input');
+  input.type        = 'number';
+  input.min         = '0';
+  input.step        = '1';
+  input.inputMode   = 'numeric';
+  input.placeholder = hintText;
+  if (state[stateKey] !== null) input.value = state[stateKey];
+  input.dataset.savingsKey = stateKey;
+  inputWrap.appendChild(sym);
+  inputWrap.appendChild(input);
+  tdInput.appendChild(inputWrap);
+  tr.appendChild(tdInput);
+
+  if (state.eurPerAud) {
+    const tdEur = el('td', 'savings-row-eur');
+    tdEur.textContent = state[stateKey] !== null
+      ? `~${fmtEur(state[stateKey] * state.eurPerAud)}`
+      : '—';
+    tr.appendChild(tdEur);
+  }
+
+  return tr;
+}
+
+// Build a savings toggle row (optional items)
+function buildSavingsToggleRow(labelText, isOn, toggleKey, noteText) {
+  const tr = el('tr', 'savings-toggle-row');
+  const tdLabel = el('td', 'savings-row-label');
+
+  const labelDiv = el('div', 'cat-label');
+  labelDiv.textContent = labelText;
+  tdLabel.appendChild(labelDiv);
+
+  if (noteText) {
+    const noteDiv = el('div', 'setup-note');
+    noteDiv.textContent = noteText;
+    tdLabel.appendChild(noteDiv);
+  }
+
+  tr.appendChild(tdLabel);
+
+  const tdToggle = el('td', 'savings-row-value');
+  tdToggle.colSpan = state.eurPerAud ? 2 : 1;
+  const toggleWrap = el('div', 'toggle-control savings-toggle');
+  [['Да', true], ['Не', false]].forEach(([txt, val]) => {
+    const btn = el('button', 'tog-btn' + (isOn === val ? ' active' : ''));
+    btn.setAttribute('type', 'button');
+    btn.textContent = txt;
+    btn.dataset.savingsToggle = toggleKey;
+    btn.dataset.savingsVal    = val;
+    toggleWrap.appendChild(btn);
+  });
+  tdToggle.appendChild(toggleWrap);
+  tr.appendChild(tdToggle);
+
+  return tr;
+}
+
+// Build savings section header row
+function buildSavingsSectionHeader(text) {
+  const tr = el('tr', 'savings-section-header');
+  const td = el('td', '');
+  td.colSpan = state.eurPerAud ? 3 : 2;
+  td.textContent = text;
+  tr.appendChild(td);
+  return tr;
+}
+
+// Build savings total row
+function buildSavingsTotalRow(labelText, audValue) {
+  const tr = el('tr', 'savings-total-row');
+  const tdLabel = el('td', '');
+  tdLabel.textContent = labelText;
+  tr.appendChild(tdLabel);
+
+  const tdVal = el('td', 'savings-row-value');
+  tdVal.textContent = audValue !== null ? `~${fmtAud(audValue)}` : '—';
+  tr.appendChild(tdVal);
+
+  if (state.eurPerAud) {
+    const tdEur = el('td', 'savings-row-eur');
+    tdEur.textContent = audValue !== null ? `~${fmtEur(audValue * state.eurPerAud)}` : '—';
+    tr.appendChild(tdEur);
+  }
+
+  return tr;
+}
+
+// Print-only panel heading (hidden on screen, shown in PDF — Fix 2)
+function buildPrintHeading(text) {
+  const h = el('div', 'print-tab-heading');
+  h.textContent = text;
+  return h;
+}
+
+// ── Grand total banner (Fix 6) — above the three tabs ─────────
+function buildSavingsGrandBanner() {
+  const div = el('div', 'savings-grand-banner');
+
+  const label = el('div', 'savings-grand-label');
+  label.textContent = 'Общо необходими спестявания за преместването';
+  div.appendChild(label);
+
+  if (grand.complete) {
+    const valWrap = el('div', 'savings-grand-value-wrap');
+    const aud = el('span', 'savings-grand-aud');
+    aud.textContent = fmtAud(grand.total);
+    valWrap.appendChild(aud);
+    if (state.eurPerAud) {
+      const eur = el('span', 'savings-grand-eur');
+      eur.textContent = `≈ ${fmtEur(grand.total * state.eurPerAud)}`;
+      valWrap.appendChild(eur);
+    }
+    div.appendChild(valWrap);
+
+    const sub = el('div', 'savings-grand-sub');
+    sub.textContent = 'Включва визови такси, билети, настаняване и спешен буфер.';
+    div.appendChild(sub);
+  } else {
+    const val = el('div', 'savings-grand-value-wrap');
+    const dash = el('span', 'savings-grand-aud savings-grand-incomplete');
+    dash.textContent = '—';
+    val.appendChild(dash);
+    div.appendChild(val);
+
+    const sub = el('div', 'savings-grand-sub');
+    sub.textContent = 'Въведете билети и оценка на квалификацията, за да видите общата сума.';
+    div.appendChild(sub);
+  }
+
+  return div;
+}
+
+// ── Pre-departure section ─────────────────────────────────────
+function buildPreDepartureSection() {
+  const sm = CFG.savings_module;
+  const section = el('div', 'setup-section');
+
+  const notice = el('div', 'setup-tab-header');
+  notice.innerHTML = `<strong>Преди заминаване</strong>Разходите, които трябва да покриете преди да напуснете България.`;
+  section.appendChild(notice);
+
+  const wrap  = el('div', 'setup-table-wrap');
+  const table = el('table', 'setup-table savings-table');
+  const thead = el('thead');
+  const hr    = el('tr');
+  thCell(hr, 'Разход', 'left');
+  thCell(hr, 'AUD', 'right');
+  if (state.eurPerAud) thCell(hr, 'EUR (прибл.)', 'right');
+  thead.appendChild(hr);
+  table.appendChild(thead);
+
+  const tbody  = el('tbody');
+
+  // Visa fee — auto-calculated
+  tbody.appendChild(buildSavingsRow('Такса виза', calcVisaFee(), calcVisaFeeBreakdown()));
+
+  // Skills assessment + WA nomination — PR only
+  if (state.visaType === 'pr') {
+    tbody.appendChild(buildSavingsInputRow(
+      'Оценка на квалификацията',
+      '500–2000',
+      'savingsSkillsAssessment',
+      'Типично $500–$2 000. Въведете точната такса на вашия оценяващ орган.'
+    ));
+    tbody.appendChild(buildSavingsRow(
+      'Номинация от WA (SNMP)',
+      sm.visa_fees.wa_nomination,
+      'Само ако кандидатствате за щатска номинация (виза 190 или 491). Невъзстановима.'
+    ));
+  }
+
+  // Flights — user input
+  tbody.appendChild(buildSavingsInputRow(
+    'Самолетни билети (SOF → PER)',
+    '3600–4800',
+    'savingsFlights',
+    'Еднопосочен, икономична класа. Резервирайте 3–6 месеца предварително.'
+  ));
+
+  table.appendChild(tbody);
+
+  // Honest total (Fix 3): show "—" until all required inputs are filled
+  const pre = calcPreDeparture();
+  const tfoot = el('tfoot');
+  tfoot.appendChild(buildSavingsTotalRow('Общо преди заминаване', pre.complete ? pre.total : null));
+  table.appendChild(tfoot);
+
+  wrap.appendChild(table);
+  section.appendChild(wrap);
+
+  if (!pre.complete) {
+    const hint = el('p', 'savings-incomplete-hint');
+    hint.textContent = '⚠️ Въведете липсващите суми (билети' +
+      (state.visaType === 'pr' ? ', оценка на квалификацията' : '') +
+      '), за да видите общата сума.';
+    section.appendChild(hint);
+  }
+
+  return section;
+}
+
+// ── Arrival section ───────────────────────────────────────────
+function buildArrivalSection() {
+  const sm     = CFG.savings_module;
+  const eb     = sm.emergency_buffer;
+  const floor  = CFG.floor_costs[String(state.householdSize)]?.aud ?? 0;
+  const buffer = floor * eb.multiplier;
+  const section = el('div', 'setup-section');
+
+  const notice = el('div', 'setup-tab-header');
+  notice.innerHTML = `<strong>При пристигане</strong>Еднократни разходи в първите седмици след пристигането ви в Пърт.`;
+  section.appendChild(notice);
+
+  const wrap  = el('div', 'setup-table-wrap');
+  const table = el('table', 'setup-table savings-table');
+  const thead = el('thead');
+  const hr    = el('tr');
+  thCell(hr, 'Разход', 'left');
+  thCell(hr, 'AUD', 'right');
+  if (state.eurPerAud) thCell(hr, 'EUR (прибл.)', 'right');
+  thead.appendChild(hr);
+  table.appendChild(thead);
+
+  const tbody = el('tbody');
+
+  // Bond + premium block — renters only (Fix 4: owners never see this)
+  if (state.housingType === 'renter') {
+    tbody.appendChild(buildSavingsToggleRow(
+      'Оставам при роднини/приятели',
+      state.savingsRentalWaived,
+      'savingsRentalWaived',
+      'Ако не е нужно да наемате жилище веднага, пропускате депозит и аванс.'
+    ));
+
+    if (!state.savingsRentalWaived) {
+      const bondTotal = calcBondAndAdvance();
+      const rb     = sm.rental_bond;
+      const sub    = state.housingSubRent;
+      const weekly = rb.weekly_rent[sub] ?? rb.weekly_rent['3bed'];
+      tbody.appendChild(buildSavingsRow(
+        'Депозит + аванс наем',
+        bondTotal,
+        `${rb.bond_weeks} седмици депозит + ${rb.advance_weeks} седмици аванс × ${fmtAud(weekly)}/седмица.`
+      ));
+      tbody.appendChild(buildSavingsRow(
+        'Доплащане без местни препоръки',
+        smArrivalAud('no_ref_premium'),
+        'Нови имигранти рядко имат препоръки от местни наемодатели. Приблизителна стойност.'
+      ));
+    }
+  }
+
+  // Furniture / white goods / kitchenware
+  tbody.appendChild(buildSavingsRow('Мебели (бюджетен пакет)', smArrivalAud('furniture'), 'IKEA / Fantastic Furniture. Диапазон: $2 500–$3 500.'));
+  tbody.appendChild(buildSavingsRow('Бяла техника', smArrivalAud('white_goods'), 'Хладилник + пералня, бюджетен клас. Диапазон: $1 100–$1 600.'));
+  tbody.appendChild(buildSavingsRow('Съдове и спално бельо', smArrivalAud('kitchenware'), 'Kmart / Target. Диапазон: $350–$500.'));
+
+  // SIM — per adult
+  const adults  = adultCount();
+  const perAdult = smArrivalPerAdult('sim');
+  tbody.appendChild(buildSavingsRow(
+    'SIM карти и мобилни планове',
+    adults * perAdult,
+    `${adults} възрастен/ни × ${fmtAud(perAdult)} (Belong / Aldi Mobile, първи месец).`
+  ));
+
+  // Car — optional toggle + user input
+  tbody.appendChild(buildSavingsToggleRow(
+    'Нужна ми е кола от първия ден',
+    state.savingsCar,
+    'savingsCar',
+    'Пърт е разпръснат град — колата е практически задължителна.'
+  ));
+
+  if (state.savingsCar) {
+    tbody.appendChild(buildSavingsInputRow(
+      'Кола втора ръка',
+      '12000–16500',
+      'savingsCarCost',
+      'Toyota Corolla / Camry, 5–10 год. Въведете очакваната сума.'
+    ));
+    tbody.appendChild(buildSavingsRow('Застраховка кола (1 год.)', smArrivalAud('car_insurance'), 'TPDI чрез RAC или HBF. Диапазон: $950–$1 400.'));
+    tbody.appendChild(buildSavingsRow('Шофьорска книжка WA (5 год.)', smArrivalAud('licence'), 'Конвертиране на чуждестранна книжка. DoT WA, 2026.'));
+  }
+
+  // School registration — 482 + school children only
+  if (state.visaType === '482' && state.schoolChildren.length > 0) {
+    tbody.appendChild(buildSavingsRow(
+      'Такса записване в училище',
+      smArrivalAud('school_registration'),
+      'Еднократна такса за семейство (TAFE International WA). Виза 482.'
+    ));
+  }
+
+  // Emergency buffer — own section, kept separate from setup spend
+  tbody.appendChild(buildSavingsSectionHeader('Спешен финансов буфер'));
+  tbody.appendChild(buildSavingsRow(
+    eb.label_bg,
+    buffer,
+    `3 × минимален месечен бюджет в Пърт за ${state.householdSize} души (${fmtAud(floor)}/мес.). Не го харчете — само за извънредни ситуации.`
+  ));
+
+  table.appendChild(tbody);
+
+  // Honest total (Fix 3): "—" until car cost entered (when car is on)
+  const arr = calcArrival();
+  const tfoot = el('tfoot');
+  tfoot.appendChild(buildSavingsTotalRow('Общо еднократни разходи (без буфер)', arr.complete ? arr.total : null));
+  table.appendChild(tfoot);
+
+  wrap.appendChild(table);
+  section.appendChild(wrap);
+
+  if (!arr.complete) {
+    const carNote = el('p', 'savings-incomplete-hint');
+    carNote.textContent = '⚠️ Въведете очакваната цена на колата, за да видите общата сума.';
+    section.appendChild(carNote);
+  }
+
+  return section;
+}
+
 // ── Totals ────────────────────────────────────────────────────
 function calcTotals() {
   let bgEur = 0, perthAud = 0;
@@ -1405,69 +1944,6 @@ function updateStickyVisibility() {
   }
 }
 
-// ── Setup costs ───────────────────────────────────────────────
-function buildSetupSection() {
-  const hasEur  = !!state.eurPerAud;
-  const section = el('div', 'setup-section');
-
-  const notice = el('div', 'setup-tab-header');
-  notice.innerHTML = `<strong>Еднократни разходи — Първа година</strong>Тези разходи се правят веднъж при пристигане и не са включени в месечния бюджет.`;
-  section.appendChild(notice);
-
-  const wrap  = el('div', 'setup-table-wrap');
-  const table = el('table', 'setup-table');
-
-  const thead = el('thead');
-  const hr    = el('tr');
-  thCell(hr, 'Разход', 'left');
-  thCell(hr, 'AUD', 'right');
-  if (hasEur) thCell(hr, 'EUR (прибл.)', 'right');
-  thead.appendChild(hr);
-  table.appendChild(thead);
-
-  const tbody    = el('tbody');
-  let totalAud   = 0;
-
-  CFG.setup_costs.forEach(item => {
-    if (!item.all_visa && item.visa_type && item.visa_type !== state.visaType) return;
-
-    totalAud += item.aud;
-    const pEur = audToEur(item.aud);
-
-    const tr      = el('tr');
-    const nameTd  = el('td');
-    const isVisa  = !item.all_visa && item.visa_type;
-    nameTd.innerHTML = `
-      <div class="cat-label">
-        ${item.label_bg}
-        ${isVisa ? `<span class="visa-tag">482</span>` : ''}
-      </div>
-      ${item.note_bg ? `<div class="setup-note">${item.note_bg}</div>` : ''}
-    `;
-    tr.appendChild(nameTd);
-    tdVal(tr, fmtAud(item.aud));
-    if (hasEur) tdVal(tr, pEur ? `~${fmtEur(pEur)}` : '—');
-    tbody.appendChild(tr);
-  });
-
-  table.appendChild(tbody);
-
-  const tfoot    = el('tfoot');
-  const fr       = el('tr');
-  const totalEur = audToEur(totalAud);
-  const lbl      = el('td');
-  lbl.textContent = 'Общо (еднократно)';
-  fr.appendChild(lbl);
-  tdVal(fr, `~${fmtAud(totalAud)}`);
-  if (hasEur) tdVal(fr, totalEur ? `~${fmtEur(totalEur)}` : '—');
-  tfoot.appendChild(fr);
-  table.appendChild(tfoot);
-
-  wrap.appendChild(table);
-  section.appendChild(wrap);
-  return section;
-}
-
 // ── Calibration footer ────────────────────────────────────────
 function buildFooter() {
   const div = el('div', 'calibration-footer');
@@ -1584,6 +2060,7 @@ function wireSubToggleEvents(container) {
 }
 
 function wireTabEvents(container) {
+  const order = ['predeparture', 'arrival', 'monthly'];
   container.querySelectorAll('.results-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       state.activeResultsTab = btn.dataset.tab;
@@ -1592,6 +2069,10 @@ function wireTabEvents(container) {
       btn.classList.add('active');
       container.querySelectorAll('.results-tab-panel').forEach(p => p.classList.remove('active'));
       document.getElementById('panel-' + btn.dataset.tab)?.classList.add('active');
+      // Slide the indicator — element persists, so this animates
+      const ind = container.querySelector('.results-tab-indicator');
+      const idx = order.indexOf(btn.dataset.tab);
+      if (ind && idx >= 0) ind.style.transform = `translateX(${idx * 100}%)`;
     });
   });
 }
@@ -1624,6 +2105,32 @@ function wireBgEditEvents(container) {
         state.bgOverrides[input.dataset.catId] = newVal;
         renderResults();
       }
+    });
+  });
+}
+
+// Wire savings module inputs and toggles
+function wireSavingsEvents(container) {
+  // User input fields (flights, skills assessment, car cost).
+  // Use 'change' (fires on blur) NOT 'input' — re-rendering mid-keystroke
+  // destroys the field and drops focus/keyboard on mobile (Fix 1/7).
+  container.querySelectorAll('.savings-user-input').forEach(input => {
+    input.addEventListener('change', e => {
+      const key = input.dataset.savingsKey;
+      const val = parseFloat(e.target.value);
+      state[key] = (!isNaN(val) && val >= 0) ? val : null;
+      renderResults();
+    });
+  });
+
+  // Toggle buttons (rental waived, car)
+  container.querySelectorAll('[data-savings-toggle]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const key = btn.dataset.savingsToggle;
+      const val = btn.dataset.savingsVal === 'true';
+      state[key] = val;
+      renderResults();
     });
   });
 }
