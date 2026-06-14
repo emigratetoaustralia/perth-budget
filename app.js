@@ -1564,6 +1564,7 @@ function buildPrintHeading(text) {
 
 // ── Grand total banner (Fix 6) — above the three tabs ─────────
 function buildSavingsGrandBanner() {
+  const grand = calcGrandTotal();
   const div = el('div', 'savings-grand-banner');
 
   const label = el('div', 'savings-grand-label');
