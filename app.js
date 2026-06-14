@@ -664,6 +664,9 @@ function renderResults() {
   const monthlyPanel = el('div', 'results-tab-panel' + (state.activeResultsTab === 'monthly' ? ' active' : ''));
   monthlyPanel.id = 'panel-monthly';
   monthlyPanel.appendChild(buildPrintHeading('Месечни разходи'));
+  const lifestyleNote = el('p', 'monthly-lifestyle-note');
+  lifestyleNote.textContent = 'Това е прогноза при пренесен български стандарт на живот върху цените в Пърт. Повечето нови емигранти започват доста по-ниско и увеличават разходите си с времето, когато доходите им се стабилизират.';
+  monthlyPanel.appendChild(lifestyleNote);
   monthlyPanel.appendChild(buildAccordionList());
   container.appendChild(monthlyPanel);
 
@@ -1373,6 +1376,16 @@ function calcPreDeparture() {
   return { total, complete };
 }
 
+function calcVehicleDuty(value) {
+  if (!value || value <= 0) return 0;
+  const d = CFG.savings_module.arrival.find(i => i.id === 'vehicle_duty');
+  if (value <= d.tier1_max) return value * d.tier1_rate;
+  if (value <= d.tier2_max) {
+    return value * (d.tier1_rate + ((value - d.tier1_max) / d.tier1_max) * (d.tier3_rate - d.tier1_rate));
+  }
+  return value * d.tier3_rate;
+}
+
 function calcArrival() {
   let total = 0;
   let complete = true;
@@ -1389,7 +1402,10 @@ function calcArrival() {
   total += adultCount() * smArrivalPerAdult('sim');
 
   if (state.savingsCar) {
-    if (state.savingsCarCost !== null) total += state.savingsCarCost;
+    if (state.savingsCarCost !== null) {
+      total += state.savingsCarCost;
+      total += calcVehicleDuty(state.savingsCarCost);
+    }
     else complete = false;
     total += smArrivalAud('car_insurance');
     total += smArrivalAud('licence');
@@ -1584,7 +1600,7 @@ function buildSavingsGrandBanner() {
     div.appendChild(valWrap);
 
     const sub = el('div', 'savings-grand-sub');
-    sub.textContent = 'Включва визови такси, билети, настаняване и спешен буфер.';
+    sub.textContent = 'Еднократни разходи за преместването. Месечните разходи са отделни — вижте таб „Месечни разходи".';
     div.appendChild(sub);
   } else {
     const val = el('div', 'savings-grand-value-wrap');
@@ -1750,6 +1766,13 @@ function buildArrivalSection() {
       'savingsCarCost',
       'Toyota Corolla / Camry, 5–10 год. Въведете очакваната сума.'
     ));
+    if (state.savingsCarCost !== null) {
+      tbody.appendChild(buildSavingsRow(
+        'Гербов налог за колата (WA)',
+        Math.round(calcVehicleDuty(state.savingsCarCost)),
+        'Държавен налог при прехвърляне. RevenueWA, Duties Act 2008. Изчислен от въведената цена.'
+      ));
+    }
     tbody.appendChild(buildSavingsRow('Застраховка кола (1 год.)', smArrivalAud('car_insurance'), 'TPDI чрез RAC или HBF. Диапазон: $950–$1 400.'));
     tbody.appendChild(buildSavingsRow('Шофьорска книжка WA (5 год.)', smArrivalAud('licence'), 'Конвертиране на чуждестранна книжка. DoT WA, 2026.'));
   }

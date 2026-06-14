@@ -1419,6 +1419,16 @@ button { -webkit-tap-highlight-color: transparent; }
   margin: 8px 0 0;
 }
 
+.monthly-lifestyle-note {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--blue);
+  background: var(--track);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin: 0 0 12px;
+}
+
 /* ── Grand total banner (v0.7) ───────────────────────────── */
 .savings-grand-banner {
   background: var(--blue);
