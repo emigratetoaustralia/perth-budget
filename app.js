@@ -2183,6 +2183,21 @@ function wireSavingsEvents(container) {
       state[key] = (!isNaN(val) && val >= 0) ? val : null;
       renderResults();
     });
+
+    // Tab / Shift+Tab: cycle between savings inputs within the container.
+    // Without this, Tab exhausts focusable elements in the panel and
+    // jumps to the browser URL bar instead of staying in the app.
+    input.addEventListener('keydown', e => {
+      if (e.key !== 'Tab') return;
+      const inputs = Array.from(container.querySelectorAll('.savings-user-input'));
+      const idx    = inputs.indexOf(input);
+      if (inputs.length < 2) return; // nothing to cycle to; let browser handle
+      e.preventDefault();
+      const next = e.shiftKey
+        ? inputs[(idx - 1 + inputs.length) % inputs.length]
+        : inputs[(idx + 1) % inputs.length];
+      next.focus();
+    });
   });
 
   // Toggle buttons (rental waived, car)
