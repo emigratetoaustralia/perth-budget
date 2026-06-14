@@ -29,6 +29,7 @@ const state = {
   savingsSkillsAssessment: null,   // user input AUD
   savingsFlights:          null,   // user input AUD
   savingsCarCost:          null,   // user input AUD
+  savingsTempWeeks:         4,      // user input weeks (temp accommodation)
 };
 
 let CFG = null;
@@ -564,7 +565,7 @@ function showInput() {
 // ── Scaling ──────────────────────────────────────────────────
 function scaleAud(cat) {
   const householdScaled = scaleValue(cat.perth_aud, cat, 'aud');
-  if (cat.scaling === 'variable' && state.bgOverrides[cat.id] !== undefined) {
+  if ((cat.scaling === 'variable' || cat.scaling === 'grocery-tier') && state.bgOverrides[cat.id] !== undefined) {
     const ratio = state.bgOverrides[cat.id] / cat.bg_eur;
     return householdScaled * ratio;
   }
@@ -594,6 +595,11 @@ function scaleValue(base, cat, currency) {
     }
     case 'variable':
       return base * (size / pivot);
+    case 'grocery-tier': {
+      const ratios = CFG.scaling.grocery_ratios;
+      const idx = Math.min(Math.max(size, 1), ratios.length) - 1;
+      return base * ratios[idx];
+    }
     case 'household-tier': {
       if (currency === 'aud') {
         if (size <= 1) return cat.perth_aud_1 ?? base;
@@ -1390,16 +1396,35 @@ function calcVehicleDuty(value) {
   return value * d.tier3_rate;
 }
 
+function tempAccomWeekly() {
+  const tiers = CFG.savings_module.temp_accommodation.tiers;
+  const size  = state.householdSize;
+  const tier  = tiers.find(t => size <= t.max_household) || tiers[tiers.length - 1];
+  return tier;
+}
+
+function calcTempAccommodation() {
+  const cfg   = CFG.savings_module.temp_accommodation;
+  const weeks = (state.savingsTempWeeks !== null && state.savingsTempWeeks >= 0)
+    ? state.savingsTempWeeks
+    : cfg.default_weeks;
+  return weeks * tempAccomWeekly().weekly_aud;
+}
+
 function calcArrival() {
   let total = 0;
   let complete = true;
 
   const stayingWithHost = state.housingType === 'renter' && state.savingsRentalWaived;
 
-  // Bond + premium only for renters who are not staying with family (Fix 4)
+  // Temporary accommodation — skipped when staying with host
+  if (!stayingWithHost) {
+    total += calcTempAccommodation();
+  }
+
+  // Bond + advance only for renters who are not staying with family
   if (state.housingType === 'renter' && !state.savingsRentalWaived) {
     total += calcBondAndAdvance();
-    total += smArrivalAud('no_ref_premium');
   }
 
   // Furniture / white goods / kitchenware — skipped when using host's assets
@@ -1473,7 +1498,9 @@ function buildSavingsRow(labelText, audValue, noteText, extraClass) {
 }
 
 // Build a savings user-input row
-function buildSavingsInputRow(labelText, hintText, stateKey, noteText) {
+function buildSavingsInputRow(labelText, hintText, stateKey, noteText, opts) {
+  const symbol  = (opts && 'symbol' in opts) ? opts.symbol : '$';
+  const showEur = !opts || opts.showEur !== false;
   const tr = el('tr', 'savings-input-row');
   const tdLabel = el('td', 'savings-row-label');
 
@@ -1491,8 +1518,11 @@ function buildSavingsInputRow(labelText, hintText, stateKey, noteText) {
 
   const tdInput = el('td', 'savings-row-value');
   const inputWrap = el('div', 'savings-user-input-wrap');
-  const sym = el('span', 'savings-input-sym');
-  sym.textContent = '$';
+  if (symbol) {
+    const sym = el('span', 'savings-input-sym');
+    sym.textContent = symbol;
+    inputWrap.appendChild(sym);
+  }
   const input = el('input', 'savings-user-input');
   input.type        = 'number';
   input.min         = '0';
@@ -1501,17 +1531,18 @@ function buildSavingsInputRow(labelText, hintText, stateKey, noteText) {
   input.placeholder = hintText;
   if (state[stateKey] !== null) input.value = state[stateKey];
   input.dataset.savingsKey = stateKey;
-  inputWrap.appendChild(sym);
   inputWrap.appendChild(input);
   tdInput.appendChild(inputWrap);
   tr.appendChild(tdInput);
 
-  if (state.eurPerAud) {
+  if (showEur && state.eurPerAud) {
     const tdEur = el('td', 'savings-row-eur');
     tdEur.textContent = state[stateKey] !== null
       ? `~${fmtEur(state[stateKey] * state.eurPerAud)}`
       : '—';
     tr.appendChild(tdEur);
+  } else if (state.eurPerAud) {
+    tr.appendChild(el('td', 'savings-row-eur'));
   }
 
   return tr;
@@ -1738,35 +1769,49 @@ function buildArrivalSection() {
 
   const tbody = el('tbody');
 
-  // Bond + premium block — renters only (Fix 4: owners never see this)
+  const stayingWithHost = state.housingType === 'renter' && state.savingsRentalWaived;
+
+  // Rental situation toggle — renters only
   if (state.housingType === 'renter') {
     tbody.appendChild(buildSavingsToggleRow(
       'Оставам при роднини/приятели',
       state.savingsRentalWaived,
       'savingsRentalWaived',
-      'Ако не е нужно да наемате жилище веднага, пропускате депозит и аванс.'
+      'Ако живеете при близки в началото, пропускате временното настаняване, депозита и обзавеждането.'
     ));
+  }
 
-    if (!state.savingsRentalWaived) {
-      const bondTotal = calcBondAndAdvance();
-      const rb     = sm.rental_bond;
-      const sub    = state.housingSubRent;
-      const weekly = rb.weekly_rent[sub] ?? rb.weekly_rent['3bed'];
-      tbody.appendChild(buildSavingsRow(
-        'Депозит + аванс наем',
-        bondTotal,
-        `${rb.bond_weeks} седмици депозит + ${rb.advance_weeks} седмици аванс × ${fmtAud(weekly)}/седмица.`
-      ));
-      tbody.appendChild(buildSavingsRow(
-        'Доплащане без местни препоръки',
-        smArrivalAud('no_ref_premium'),
-        'Нови имигранти рядко имат препоръки от местни наемодатели. Приблизителна стойност.'
-      ));
-    }
+  // Temporary accommodation — skipped when staying with host
+  if (!stayingWithHost) {
+    const tier = tempAccomWeekly();
+    tbody.appendChild(buildSavingsRow(
+      'Временно настаняване',
+      calcTempAccommodation(),
+      `${tier.label_bg} × ${fmtAud(tier.weekly_aud)}/седмица. ${sm.temp_accommodation.note_bg}`
+    ));
+    tbody.appendChild(buildSavingsInputRow(
+      'Брой седмици временно настаняване',
+      String(sm.temp_accommodation.default_weeks),
+      'savingsTempWeeks',
+      'Коригирайте според очакванията си. По подразбиране: 4 седмици.',
+      { symbol: '', showEur: false }
+    ));
+  }
+
+  // Bond + advance — renters not staying with host
+  if (state.housingType === 'renter' && !state.savingsRentalWaived) {
+    const bondTotal = calcBondAndAdvance();
+    const rb     = sm.rental_bond;
+    const sub    = state.housingSubRent;
+    const weekly = rb.weekly_rent[sub] ?? rb.weekly_rent['3bed'];
+    tbody.appendChild(buildSavingsRow(
+      'Депозит + аванс наем',
+      bondTotal,
+      `${rb.bond_weeks} седмици депозит + ${rb.advance_weeks} седмици аванс × ${fmtAud(weekly)}/седмица.`
+    ));
   }
 
   // Furniture / white goods / kitchenware — skipped when staying with host
-  const stayingWithHost = state.housingType === 'renter' && state.savingsRentalWaived;
   if (!stayingWithHost) {
     tbody.appendChild(buildSavingsRow('Мебели (бюджетен пакет)', smArrivalAud('furniture'), 'IKEA / Fantastic Furniture. Диапазон: $2 500–$3 500.'));
     tbody.appendChild(buildSavingsRow('Бяла техника', smArrivalAud('white_goods'), 'Хладилник + пералня, бюджетен клас. Диапазон: $1 100–$1 600.'));
