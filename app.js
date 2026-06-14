@@ -1373,6 +1373,10 @@ function calcPreDeparture() {
   if (state.savingsFlights !== null) total += state.savingsFlights;
   else complete = false;
 
+  // English test — fixed, both visas
+  const eng = sm.predeparture.find(i => i.id === 'english_test');
+  if (eng && typeof eng.aud === 'number') total += eng.aud;
+
   return { total, complete };
 }
 
@@ -1390,15 +1394,20 @@ function calcArrival() {
   let total = 0;
   let complete = true;
 
+  const stayingWithHost = state.housingType === 'renter' && state.savingsRentalWaived;
+
   // Bond + premium only for renters who are not staying with family (Fix 4)
   if (state.housingType === 'renter' && !state.savingsRentalWaived) {
     total += calcBondAndAdvance();
     total += smArrivalAud('no_ref_premium');
   }
 
-  total += smArrivalAud('furniture');
-  total += smArrivalAud('white_goods');
-  total += smArrivalAud('kitchenware');
+  // Furniture / white goods / kitchenware — skipped when using host's assets
+  if (!stayingWithHost) {
+    total += smArrivalAud('furniture');
+    total += smArrivalAud('white_goods');
+    total += smArrivalAud('kitchenware');
+  }
   total += adultCount() * smArrivalPerAdult('sim');
 
   if (state.savingsCar) {
@@ -1427,7 +1436,8 @@ function calcGrandTotal() {
   const pre = calcPreDeparture();
   const arr = calcArrival();
   return {
-    total:    pre.total + arr.total + calcBuffer(),
+    total:    pre.total + arr.total,
+    buffer:   calcBuffer(),
     complete: pre.complete && arr.complete
   };
 }
@@ -1584,7 +1594,7 @@ function buildSavingsGrandBanner() {
   const div = el('div', 'savings-grand-banner');
 
   const label = el('div', 'savings-grand-label');
-  label.textContent = 'Общо необходими спестявания за преместването';
+  label.textContent = 'Необходими средства за преместването';
   div.appendChild(label);
 
   if (grand.complete) {
@@ -1600,8 +1610,14 @@ function buildSavingsGrandBanner() {
     div.appendChild(valWrap);
 
     const sub = el('div', 'savings-grand-sub');
-    sub.textContent = 'Еднократни разходи за преместването. Месечните разходи са отделни — вижте таб „Месечни разходи".';
+    sub.textContent = 'Еднократни разходи за преместването (преди заминаване + при пристигане). Месечните разходи са отделни — вижте таб „Месечни разходи".';
     div.appendChild(sub);
+
+    // Recommended buffer — shown separately, NOT added to the headline
+    const rec = el('div', 'savings-grand-buffer');
+    const eurBuf = state.eurPerAud ? ` (≈ ${fmtEur(grand.buffer * state.eurPerAud)})` : '';
+    rec.textContent = `💡 Препоръчително отгоре: спешен буфер ${fmtAud(grand.buffer)}${eurBuf} — 3 месечни бюджета резерв. Не е задължителен, но горещо препоръчителен.`;
+    div.appendChild(rec);
   } else {
     const val = el('div', 'savings-grand-value-wrap');
     const dash = el('span', 'savings-grand-aud savings-grand-incomplete');
@@ -1656,6 +1672,12 @@ function buildPreDepartureSection() {
     ));
   }
 
+  // English test — fixed, both visas
+  const engItem = sm.predeparture.find(i => i.id === 'english_test');
+  if (engItem) {
+    tbody.appendChild(buildSavingsRow(engItem.label_bg, engItem.aud, engItem.note_bg));
+  }
+
   // Flights — user input
   tbody.appendChild(buildSavingsInputRow(
     'Самолетни билети (SOF → PER)',
@@ -1681,6 +1703,12 @@ function buildPreDepartureSection() {
       (state.visaType === 'pr' ? ', оценка на квалификацията' : '') +
       '), за да видите общата сума.';
     section.appendChild(hint);
+  }
+
+  if (sm.predeparture_note_bg) {
+    const other = el('p', 'savings-other-note');
+    other.textContent = sm.predeparture_note_bg;
+    section.appendChild(other);
   }
 
   return section;
@@ -1737,10 +1765,19 @@ function buildArrivalSection() {
     }
   }
 
-  // Furniture / white goods / kitchenware
-  tbody.appendChild(buildSavingsRow('Мебели (бюджетен пакет)', smArrivalAud('furniture'), 'IKEA / Fantastic Furniture. Диапазон: $2 500–$3 500.'));
-  tbody.appendChild(buildSavingsRow('Бяла техника', smArrivalAud('white_goods'), 'Хладилник + пералня, бюджетен клас. Диапазон: $1 100–$1 600.'));
-  tbody.appendChild(buildSavingsRow('Съдове и спално бельо', smArrivalAud('kitchenware'), 'Kmart / Target. Диапазон: $350–$500.'));
+  // Furniture / white goods / kitchenware — skipped when staying with host
+  const stayingWithHost = state.housingType === 'renter' && state.savingsRentalWaived;
+  if (!stayingWithHost) {
+    tbody.appendChild(buildSavingsRow('Мебели (бюджетен пакет)', smArrivalAud('furniture'), 'IKEA / Fantastic Furniture. Диапазон: $2 500–$3 500.'));
+    tbody.appendChild(buildSavingsRow('Бяла техника', smArrivalAud('white_goods'), 'Хладилник + пералня, бюджетен клас. Диапазон: $1 100–$1 600.'));
+    tbody.appendChild(buildSavingsRow('Съдове и спално бельо', smArrivalAud('kitchenware'), 'Kmart / Target. Диапазон: $350–$500.'));
+  } else {
+    tbody.appendChild(buildSavingsRow(
+      'Обзавеждане и техника',
+      0,
+      'Докато сте при близки, ползвате техните мебели и техника. Тези разходи ще възникнат по-късно, когато се преместите в собствено жилище.'
+    ));
+  }
 
   // SIM — per adult
   const adults  = adultCount();

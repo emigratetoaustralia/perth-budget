@@ -1,4 +1,4 @@
-const CACHE = 'perth-budget-v3';
+const CACHE = 'perth-budget-v4';
 const ASSETS = [
   './',
   './index.html',

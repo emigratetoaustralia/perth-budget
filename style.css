@@ -346,7 +346,8 @@ button { -webkit-tap-highlight-color: transparent; }
   flex-wrap: nowrap;
   overflow: hidden;
   cursor: pointer;
-  border-bottom: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
 }
 
 .results-meta:hover { background: var(--blue-dark); }
@@ -1474,6 +1475,25 @@ button { -webkit-tap-highlight-color: transparent; }
 .savings-grand-sub {
   font-size: 0.74rem;
   opacity: 0.8;
+}
+
+.savings-grand-buffer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  opacity: 0.95;
+}
+
+.savings-other-note {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-muted, #555);
+  background: var(--track);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin: 10px 0 0;
 }
 
 /* Print-only tab headings */
