@@ -1804,14 +1804,15 @@ function buildArrivalSection() {
       'Toyota Corolla / Camry, 5–10 год. Въведете очакваната сума.'
     ));
     if (state.savingsCarCost !== null) {
+      const dutyItem = CFG.savings_module.arrival.find(i => i.id === 'vehicle_duty');
       tbody.appendChild(buildSavingsRow(
-        'Гербов налог за колата (WA)',
+        dutyItem.label_bg,
         Math.round(calcVehicleDuty(state.savingsCarCost)),
-        'Държавен налог при прехвърляне. RevenueWA, Duties Act 2008. Изчислен от въведената цена.'
+        dutyItem.note_bg
       ));
     }
     tbody.appendChild(buildSavingsRow('Застраховка кола (1 год.)', smArrivalAud('car_insurance'), 'TPDI чрез RAC или HBF. Диапазон: $950–$1 400.'));
-    tbody.appendChild(buildSavingsRow('Шофьорска книжка WA (5 год.)', smArrivalAud('licence'), 'Конвертиране на чуждестранна книжка. DoT WA, 2026.'));
+    tbody.appendChild(buildSavingsRow('Шофьорска книжка WA (5 год.)', smArrivalAud('licence'), 'България не е призната страна в WA — не можете да конвертирате директно. Трябва да положите теоретичен изпит (~$193) и практически тест (HPT $28). Таксата тук е за 5-годишната книжка след успешно издържани изпити. DoT WA, ноември 2025.'));
   }
 
   // School registration — 482 + school children only
