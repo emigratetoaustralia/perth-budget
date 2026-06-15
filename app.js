@@ -12,9 +12,10 @@ const state = {
   visaKey:              null,
   householdType:        null,
   adultCount:           1,
-  childCount:           0,
+  childCount:           0,   // derived: kindyCount + schoolCount
+  kindyCount:           0,   // children 0-4 yrs
+  schoolCount:          0,   // children 5-18 yrs
   partnerEnglish:       null,
-  schoolAgeChildren:    null,
   skillsAssessmentCost: null,   // null = use range; number = user input
   flightsCost:          null,   // null = use range; number = user input
   vehicleCost:          null,   // null = use default $14k; number = user input
@@ -44,8 +45,7 @@ const ALL_CARDS = [
   'disclaimer',
   'visa_type',
   'household',
-  'partner_english',     // conditional
-  'school_children',     // conditional
+  'partner_english',     // conditional: PR + couple or family
   'skills_assessment',   // conditional: PR only
   'flights_input',
   'transport',
@@ -65,9 +65,6 @@ function getActiveCards() {
     if (key === 'partner_english') {
       return (state.visaKey === 'pr_189' || state.visaKey === 'pr_190') &&
              (state.householdType === 'couple' || state.householdType === 'family');
-    }
-    if (key === 'school_children') {
-      return state.visaKey === 'visa_482' && state.childCount > 0;
     }
     if (key === 'skills_assessment') {
       return state.visaKey === 'pr_189' || state.visaKey === 'pr_190';
@@ -155,7 +152,6 @@ function renderCard(key) {
     visa_type:          cardVisaType,
     household:          cardHousehold,
     partner_english:    cardPartnerEnglish,
-    school_children:    cardSchoolChildren,
     skills_assessment:  cardSkillsAssessment,
     flights_input:      cardFlightsInput,
     transport:          cardTransport,
@@ -180,7 +176,7 @@ function cardExchangeRate() {
   const anchor  = DATA.meta.currency_anchor_eur_per_aud;
   const hasEur  = state.eurPerAud !== null;
   return `
-    ${msg(`Здравей! Аз ще те преведа стъпка по стъпка през всичко, което трябва да знаеш за разходите при преместване в Пърт.<br><br>Всички суми са в австралийски долари (AUD). Искаш ли да виждаш и приблизителните стойности в евро?<br><br><span class="msg-note">Насочващ курс: 1 AUD = ${anchor} EUR (средата на 2026)</span>`)}
+    ${msg(`Здравей! Аз ще те преведа стъпка по стъпка през всичко, което трябва да знаеш за разходите при преместване в Пърт.<br><br>Всички суми са в австралийски долари (AUD). Искаш ли да виждаш и приблизителните стойности в евро?<br><br><span class="msg-note">Насочващ курс: 1 AUD = ${anchor} EUR (средата на 2026)</span>`)}\
     <div class="card-inputs">
       <div class="choice-group--inline">
         ${choiceBtn('aud', 'Само AUD', !hasEur)}
@@ -203,9 +199,8 @@ function cardExchangeRate() {
 // --- Card 2: Disclaimer ---
 function cardDisclaimer() {
   const d = DATA.disclaimer;
-  const paras = d.paragraphs_bg.map(p => `<p>${p}</p>`).join('');
   return `
-    ${msg(`Преди да продължим — две важни неща.<br><br>${d.paragraphs_bg[0]}<br><br>${d.paragraphs_bg[1]}<br><br>${d.paragraphs_bg[2]}`)}
+    ${msg(`Преди да продължим — две важни неща.<br><br>${d.paragraphs_bg[0]}<br><br>${d.paragraphs_bg[1]}<br><br>${d.paragraphs_bg[2]}`)}\
     <div class="card-inputs">
       <button class="primary-btn" id="disclaimer-confirm">${d.confirm_bg}</button>
     </div>
@@ -215,7 +210,7 @@ function cardDisclaimer() {
 // --- Card 3: Visa type ---
 function cardVisaType() {
   return `
-    ${msg('Добре. Кажи ми — по какъв път отиваш в Австралия?')}
+    ${msg('Добре. Кажи ми — по какъв път отиваш в Австралия?')}\
     <div class="card-inputs">
       <div class="choice-group">
         ${DATA.visa.options.map(o => choiceBtn(o.key, o.label_bg, state.visaKey === o.key)).join('')}
@@ -225,10 +220,11 @@ function cardVisaType() {
 }
 
 // --- Card 4: Household ---
+// Two age-split child counters shown when householdType === 'family'
 function cardHousehold() {
   const isFamily = state.householdType === 'family';
   return `
-    ${msg('Само ти ли заминаваш, или пътувате заедно с някой?')}
+    ${msg('Само ти ли заминаваш, или пътувате заедно с някой?')}\
     <div class="card-inputs">
       <div class="choice-group">
         ${choiceBtn('solo',   'Само аз',            state.householdType === 'solo')}
@@ -236,12 +232,28 @@ function cardHousehold() {
         ${choiceBtn('family', 'Семейство с деца',   state.householdType === 'family')}
       </div>
       ${isFamily ? `
-        <div class="child-counter">
-          <span class="counter-label">Брой деца:</span>
-          <div class="counter-controls">
-            <button class="counter-btn" id="child-minus">−</button>
-            <span class="counter-value" id="child-count">${state.childCount}</span>
-            <button class="counter-btn" id="child-plus">+</button>
+        <div class="child-counters">
+          <div class="child-counter">
+            <div class="counter-label-wrap">
+              <span class="counter-label">Малки деца</span>
+              <span class="counter-age">0–4 г.</span>
+            </div>
+            <div class="counter-controls">
+              <button class="counter-btn" id="kindy-minus">−</button>
+              <span class="counter-value" id="kindy-count">${state.kindyCount}</span>
+              <button class="counter-btn" id="kindy-plus">+</button>
+            </div>
+          </div>
+          <div class="child-counter">
+            <div class="counter-label-wrap">
+              <span class="counter-label">Деца в училище</span>
+              <span class="counter-age">5–18 г.</span>
+            </div>
+            <div class="counter-controls">
+              <button class="counter-btn" id="school-minus">−</button>
+              <span class="counter-value" id="school-count">${state.schoolCount}</span>
+              <button class="counter-btn" id="school-plus">+</button>
+            </div>
           </div>
         </div>
         <button class="primary-btn" id="household-confirm">Продължи →</button>
@@ -254,7 +266,7 @@ function cardHousehold() {
 function cardPartnerEnglish() {
   const si = DATA.visa.second_instalment;
   return `
-    ${msg(`Важен въпрос за партньорът ти: има ли валиден резултат от езиков изпит (IELTS или PTE)?<br><br>Ако не — правителството добавя задължителна втора вноска от <strong>$${si.amount.toLocaleString()} AUD</strong> към визата.`)}
+    ${msg(`Важен въпрос за партньорът ти: има ли валиден резултат от езиков изпит (IELTS или PTE)?<br><br>Ако не — правителството изисква задължителна втора вноска от <strong>$${si.amount.toLocaleString()} AUD</strong> към визата.`)}\
     <div class="card-inputs">
       <div class="choice-group--inline">
         ${choiceBtn('yes', 'Да, има / ще се яви', state.partnerEnglish === true)}
@@ -268,27 +280,13 @@ function cardPartnerEnglish() {
   `;
 }
 
-// --- Card 6: School children (conditional) ---
-function cardSchoolChildren() {
-  const s = DATA.monthly.school;
-  return `
-    ${msg(`Тъй като идвате на временна виза с деца, Западна Австралия начислява такса за обучение в държавните училища.<br><br>Таксата е <strong>$${s.first_child_monthly}/мес</strong> за първото дете и <strong>$${s.subsequent_child_monthly}/мес</strong> за всяко следващо. Важно: таксата е на семейство, не на дете.<br><br>Децата ви в училищна възраст ли са (5 до 18 години)?`)}
-    <div class="card-inputs">
-      <div class="choice-group--inline">
-        ${choiceBtn('yes', 'Да, в училище',  state.schoolAgeChildren === true)}
-        ${choiceBtn('no',  'Не, по-малки са', state.schoolAgeChildren === false)}
-      </div>
-    </div>
-  `;
-}
-
-// --- Card 7: Skills assessment (conditional: PR only) ---
+// --- Card 6: Skills assessment (conditional: PR only) ---
 function cardSkillsAssessment() {
   const sa    = DATA.predeparture.skills_assessment;
   const link  = DATA.meta.source_links[sa.source_key];
   const known = state.skillsAssessmentCost !== null;
   return `
-    ${msg(`Преди да кандидатстваш за постоянно пребиваване ще ти трябва оценка на уменията от признат австралийски орган.<br><br>Цената варира: от <strong>$${sa.range_min}</strong> до <strong>$${sa.range_max} AUD</strong> — зависи от професията и оценяващия орган.<br><br><a href="${link}" target="_blank" class="source-link">→ Провери таксата за твоята специалност</a>`)}
+    ${msg(`Преди да кандидатстваш за постоянно пребиваване ще ти трябва оценка на уменията от признат австралийски орган.<br><br>Цената варира: от <strong>$${sa.range_min}</strong> до <strong>$${sa.range_max} AUD</strong> — зависи от професията и оценяващия орган.<br><br><a href="${link}" target="_blank" class="source-link">→ Провери таксата за твоята специалност</a>`)}\
     <div class="card-inputs">
       <p class="input-label">${sa.input_prompt_bg}</p>
       <div class="choice-group--inline">
@@ -306,7 +304,7 @@ function cardSkillsAssessment() {
   `;
 }
 
-// --- Card 8: Flights input ---
+// --- Card 7: Flights input ---
 function cardFlightsInput() {
   const f    = DATA.arrival.flights;
   const n    = getFamilySize();
@@ -315,7 +313,7 @@ function cardFlightsInput() {
   const pWord = n === 1 ? 'човек' : 'души';
   const known = state.flightsCost !== null;
   return `
-    ${msg(`Самолетните билети. За ${n} ${pWord} от София до Пърт, ориентировъчно е между <strong>$${fMin.toLocaleString()}</strong> и <strong>$${fMax.toLocaleString()} AUD</strong>.<br><br>${f.note_bg}`)}
+    ${msg(`Самолетните билети. За ${n} ${pWord} от София до Пърт, ориентировъчно е между <strong>$${fMin.toLocaleString()}</strong> и <strong>$${fMax.toLocaleString()} AUD</strong>.<br><br>${f.note_bg}`)}\
     <div class="card-inputs">
       <p class="input-label">${f.input_prompt_bg}</p>
       <div class="choice-group--inline">
@@ -333,14 +331,14 @@ function cardFlightsInput() {
   `;
 }
 
-// --- Card 9: Transport (+ vehicle cost if car) ---
+// --- Card 8: Transport (+ vehicle cost if car) ---
 function cardTransport() {
   const t     = DATA.monthly.transport;
   const v     = DATA.arrival.vehicle;
   const isCar = state.transport === 'car';
   const known = state.vehicleCost !== null;
   return `
-    ${msg('Пърт е голям и разпръснат град. Общественият транспорт покрива добре центъра, но не стига до всички квартали.<br><br>Планираш ли да купиш кола, или ще разчиташ на автобуси и влакове?')}
+    ${msg('Пърт е голям и разпръснат град. Общественият транспорт покрива добре центъра, но не стига до всички квартали.<br><br>Планираш ли да купиш кола, или ще разчиташ на автобуси и влакове?')}\
     <div class="card-inputs">
       <div class="choice-group--inline">
         ${choiceBtn('car',        'Купувам кола', state.transport === 'car')}
@@ -365,10 +363,10 @@ function cardTransport() {
   `;
 }
 
-// --- Card 10: Staying with family ---
+// --- Card 9: Staying with family ---
 function cardStayingWithFamily() {
   return `
-    ${msg('Как планираш първите седмици в Пърт след пристигането?')}
+    ${msg('Как планираш първите седмици в Пърт след пристигането?')}\
     <div class="card-inputs">
       <div class="choice-group--inline">
         ${choiceBtn('temp',   'Наемам временно жилище',      state.stayingWithFamily === false)}
@@ -382,10 +380,10 @@ function cardStayingWithFamily() {
   `;
 }
 
-// --- Card 11: Property type ---
+// --- Card 10: Property type ---
 function cardPropertyType() {
   return `
-    ${msg('Какъв тип жилище търсиш?')}
+    ${msg('Какъв тип жилище търсиш?')}\
     <div class="card-inputs">
       <div class="choice-group">
         ${Object.entries(DATA.housing.types).map(([key, val]) =>
@@ -396,10 +394,10 @@ function cardPropertyType() {
   `;
 }
 
-// --- Card 12: Location ---
+// --- Card 11: Location ---
 function cardLocation() {
   return `
-    ${msg(`Последен въпрос! Как си представяш живота в Пърт?<br><br><span class="msg-note">${DATA.housing.city_premium_note_bg}</span>`)}
+    ${msg(`Последен въпрос! Как си представяш живота в Пърт?<br><br><span class="msg-note">${DATA.housing.city_premium_note_bg}</span>`)}\
     <div class="card-inputs">
       <div class="choice-group--inline">
         ${choiceBtn('suburbs', 'Предградия',              state.location === 'suburbs')}
@@ -409,10 +407,10 @@ function cardLocation() {
   `;
 }
 
-// --- Card 13: Summary trigger ---
+// --- Card 12: Summary trigger ---
 function cardSummaryTrigger() {
   return `
-    ${msg('Перфектно — имам всичко, което ми трябва. Готов ли си да видиш пълното резюме на разходите?')}
+    ${msg('Перфектно — имам всичко, което ми трябва. Готов ли си да видиш пълното резюме на разходите?')}\
     <div class="card-inputs">
       <button class="primary-btn" id="show-summary">Покажи резюмето →</button>
     </div>
@@ -429,7 +427,6 @@ function bindCardEvents(key, el) {
     visa_type:          bindVisaType,
     household:          bindHousehold,
     partner_english:    bindPartnerEnglish,
-    school_children:    bindSchoolChildren,
     skills_assessment:  bindSkillsAssessment,
     flights_input:      bindFlightsInput,
     transport:          bindTransport,
@@ -502,16 +499,19 @@ function bindHousehold(el) {
       const val = btn.dataset.value;
       state.householdType = val;
       if (val === 'solo') {
-        state.adultCount = 1; state.childCount = 0;
+        state.adultCount = 1;
+        state.kindyCount = 0; state.schoolCount = 0; state.childCount = 0;
         track('household/solo');
         goForward(getNextCard('household'));
       } else if (val === 'couple') {
-        state.adultCount = 2; state.childCount = 0;
+        state.adultCount = 2;
+        state.kindyCount = 0; state.schoolCount = 0; state.childCount = 0;
         track('household/couple');
         goForward(getNextCard('household'));
       } else {
+        // family — show counters; ensure at least one child as default
         state.adultCount = 2;
-        if (state.childCount < 1) state.childCount = 1;
+        if (state.kindyCount + state.schoolCount < 1) state.schoolCount = 1;
         const cur = document.getElementById('card-current');
         cur.innerHTML = cardHousehold();
         bindHousehold(cur);
@@ -519,19 +519,36 @@ function bindHousehold(el) {
     });
   });
 
-  const minus   = el.querySelector('#child-minus');
-  const plus    = el.querySelector('#child-plus');
-  const display = el.querySelector('#child-count');
-  const confirm = el.querySelector('#household-confirm');
+  // Kindy counter
+  const kindyMinus   = el.querySelector('#kindy-minus');
+  const kindyPlus    = el.querySelector('#kindy-plus');
+  const kindyDisplay = el.querySelector('#kindy-count');
 
-  if (minus) minus.addEventListener('click', () => {
-    if (state.childCount > 1) { state.childCount--; display.textContent = state.childCount; }
+  if (kindyMinus) kindyMinus.addEventListener('click', () => {
+    if (state.kindyCount > 0) { state.kindyCount--; kindyDisplay.textContent = state.kindyCount; }
   });
-  if (plus) plus.addEventListener('click', () => {
-    if (state.childCount < 8) { state.childCount++; display.textContent = state.childCount; }
+  if (kindyPlus) kindyPlus.addEventListener('click', () => {
+    if (state.kindyCount < 8) { state.kindyCount++; kindyDisplay.textContent = state.kindyCount; }
   });
+
+  // School counter
+  const schoolMinus   = el.querySelector('#school-minus');
+  const schoolPlus    = el.querySelector('#school-plus');
+  const schoolDisplay = el.querySelector('#school-count');
+
+  if (schoolMinus) schoolMinus.addEventListener('click', () => {
+    if (state.schoolCount > 0) { state.schoolCount--; schoolDisplay.textContent = state.schoolCount; }
+  });
+  if (schoolPlus) schoolPlus.addEventListener('click', () => {
+    if (state.schoolCount < 8) { state.schoolCount++; schoolDisplay.textContent = state.schoolCount; }
+  });
+
+  const confirm = el.querySelector('#household-confirm');
   if (confirm) confirm.addEventListener('click', () => {
-    track('household/family_children_' + state.childCount);
+    const total = state.kindyCount + state.schoolCount;
+    if (total < 1) { showError(el, 'Добави поне едно дете.'); return; }
+    state.childCount = total;
+    track('household/family_kindy_' + state.kindyCount + '_school_' + state.schoolCount);
     goForward(getNextCard('household'));
   });
 }
@@ -553,16 +570,6 @@ function bindPartnerEnglish(el) {
   const confirm = el.querySelector('#partner-english-confirm');
   if (confirm) confirm.addEventListener('click', () => {
     goForward(getNextCard('partner_english'));
-  });
-}
-
-function bindSchoolChildren(el) {
-  el.querySelectorAll('.choice-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      state.schoolAgeChildren = btn.dataset.value === 'yes';
-      track('school_children/' + btn.dataset.value);
-      goForward(getNextCard('school_children'));
-    });
   });
 }
 
@@ -793,7 +800,7 @@ function calcPredeparture() {
     addFixed('Езиков изпит (IELTS / PTE)', et.amount, { note_bg: et.note_bg, source_key: 'visa_fees' });
   }
 
-  // Skills assessment (PR only) — now included in range
+  // Skills assessment (PR only)
   if (state.visaKey === 'pr_189' || state.visaKey === 'pr_190') {
     const sa = DATA.predeparture.skills_assessment;
     if (state.skillsAssessmentCost !== null) {
@@ -859,9 +866,11 @@ function calcArrival() {
     addFixed('Шофьорска книжка + изпити', v.licence_and_tests, { note_bg: v.note_bg_licence, source_key: 'dot_licence' });
   }
 
-  // School registration one-off (482 + school age)
-  if (state.visaKey === 'visa_482' && state.schoolAgeChildren) {
-    addFixed('Еднократна регистрация в училище', DATA.monthly.school.registration_one_off, { note_bg: DATA.monthly.school.note_bg });
+  // School registration one-off (482 + school-age children)
+  // BUG-001 guard: uses schoolCount (5-18), not childCount
+  if (state.visaKey === 'visa_482' && state.schoolCount > 0) {
+    const s = DATA.monthly.school;
+    addFixed('Еднократна регистрация в училище', s.registration_one_off, { note_bg: s.note_bg });
   }
 
   return { lo, hi, lines };
@@ -918,14 +927,35 @@ function calcMonthly() {
     addRange('Хранене навън и кафе', d.family_min, d.family_max, { note_bg: d.note_bg });
   }
 
-  // Kids activities
+  // Kids activities — all children (kindy + school)
   if (state.householdType === 'family' && state.childCount > 0) {
-    const ka  = DATA.monthly.kids_activities;
+    const ka    = DATA.monthly.kids_activities;
     const cWord = state.childCount === 1 ? 'дете' : 'деца';
     addRange(`Занимания за деца (${state.childCount} ${cWord})`,
       ka.per_child_min * state.childCount,
       ka.per_child_max * state.childCount,
       { note_bg: ka.note_bg });
+  }
+
+  // Kindy childcare — only when kindyCount > 0
+  if (state.kindyCount > 0) {
+    const k     = DATA.monthly.kindy;
+    const isPR  = state.visaKey === 'pr_189' || state.visaKey === 'pr_190';
+    const kWord = state.kindyCount === 1 ? 'дете' : 'деца';
+    if (isPR) {
+      addRange(
+        `Детска грижа (${state.kindyCount} ${kWord})`,
+        k.perth_aud_net_pr_min * state.kindyCount,
+        k.perth_aud_net_pr_max * state.kindyCount,
+        { note_bg: k.note_bg_pr, source_key: 'ccs_calculator' }
+      );
+    } else {
+      addFixed(
+        `Детска грижа (${state.kindyCount} ${kWord})`,
+        k.perth_aud_gross * state.kindyCount,
+        { note_bg: k.note_bg_482 }
+      );
+    }
   }
 
   // OVHC (482 only)
@@ -935,10 +965,12 @@ function calcMonthly() {
     addFixed('OVHC здравна застраховка', amount, { note_bg: ovhc.note_bg, source_key: 'ovhc' });
   }
 
-  // School (482 + school age) — guard-rail: per family not per child
-  if (state.visaKey === 'visa_482' && state.schoolAgeChildren) {
+  // School (482 + school-age children)
+  // BUG-001 guard-rail: fee is per family, not per child.
+  // Uses schoolCount (5-18 yrs only), NOT childCount.
+  if (state.visaKey === 'visa_482' && state.schoolCount > 0) {
     const s   = DATA.monthly.school;
-    const fee = s.first_child_monthly + Math.max(0, state.childCount - 1) * s.subsequent_child_monthly;
+    const fee = s.first_child_monthly + Math.max(0, state.schoolCount - 1) * s.subsequent_child_monthly;
     addFixed('Такса обучение (държавно училище)', fee, { note_bg: s.note_bg });
   }
 
@@ -975,7 +1007,7 @@ function fmtAUD(n) {
 }
 
 function fmtEUR(n) {
-  // Format with space as thousands separator: €7 707
+  // Format with non-breaking space as thousands separator: €7 707
   const str = Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
   return '€\u00A0' + str;
 }
@@ -1040,7 +1072,20 @@ function buildSummaryHTML(predep, arrival, monthly) {
 
 function buildProfileCard() {
   const visaLabel = DATA.visa.options.find(o => o.key === state.visaKey)?.label_bg || '—';
-  const householdMap = { solo: 'Само аз', couple: 'Аз и партньорът ми', family: `Семейство с ${state.childCount} ${state.childCount === 1 ? 'дете' : 'деца'}` };
+
+  function familyLabel() {
+    const parts = [];
+    if (state.kindyCount > 0) parts.push(`${state.kindyCount} ${state.kindyCount === 1 ? 'малко дете' : 'малки деца'}`);
+    if (state.schoolCount > 0) parts.push(`${state.schoolCount} в училище`);
+    return `Семейство (${parts.join(', ')})`;
+  }
+
+  const householdMap = {
+    solo:   'Само аз',
+    couple: 'Аз и партньорът ми',
+    family: familyLabel()
+  };
+
   const transportLabel = state.transport === 'car'
     ? `Кола${state.vehicleCost ? ' ($' + state.vehicleCost.toLocaleString() + ')' : ' ($14,000 ориентир)'}`
     : 'Обществен транспорт';
@@ -1111,8 +1156,9 @@ function buildPhaseBlock(title, calc) {
 // ============================================================
 function resetApp() {
   Object.assign(state, {
-    visaKey: null, householdType: null, adultCount: 1, childCount: 0,
-    partnerEnglish: null, schoolAgeChildren: null,
+    visaKey: null, householdType: null, adultCount: 1,
+    childCount: 0, kindyCount: 0, schoolCount: 0,
+    partnerEnglish: null,
     skillsAssessmentCost: null, flightsCost: null, vehicleCost: null,
     transport: null, stayingWithFamily: null,
     propertyType: null, location: null, eurPerAud: null
