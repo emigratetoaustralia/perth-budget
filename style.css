@@ -120,7 +120,9 @@ button { font-family: inherit; cursor: pointer; }
   top: 0;
   left: 0;
   width: 100%;
-  min-height: 100%;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -586,6 +588,185 @@ button { font-family: inherit; cursor: pointer; }
 .restart-btn:hover { background: rgba(26, 78, 110, 0.06); }
 
 /* ============================================================
+   PRINT BUTTON
+   ============================================================ */
+.print-btn {
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 24px;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--eucalypt);
+  background: none;
+  border: 1.5px solid var(--eucalypt);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  transition: background 0.15s;
+}
+.print-btn:hover { background: rgba(61, 122, 86, 0.06); }
+
+/* ============================================================
+   LAZAR AFFILIATE BLOCK
+   ============================================================ */
+.lazar-block {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 20px 16px;
+}
+
+.lazar-text {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--ink-2);
+  background: var(--gold-bg);
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.lazar-cta {
+  display: block;
+  text-align: center;
+  background: var(--gold);
+  color: var(--white);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 16px 24px;
+  border-radius: var(--radius);
+  margin: 10px 0 0;
+  transition: opacity 0.15s;
+}
+.lazar-cta:hover { opacity: 0.88; text-decoration: none; }
+
+.lazar-disclosure {
+  font-size: 0.75rem;
+  color: var(--fog);
+  text-align: center;
+  padding: 6px 0 0;
+}
+
+/* ============================================================
+   PASSWORD GATE
+   ============================================================ */
+#password-gate {
+  min-height: 100dvh;
+  background: var(--sand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+}
+
+#password-gate.hidden { display: none !important; }
+
+.gate-inner {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.gate-logo { font-size: 2.5rem; line-height: 1; }
+
+.gate-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ocean);
+}
+
+.gate-sub {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.gate-patreon-link {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--sky);
+}
+
+.gate-input-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.gate-input {
+  width: 100%;
+  min-height: 54px;
+  padding: 14px 16px;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--ocean);
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+  text-transform: uppercase;
+}
+.gate-input:focus { border-color: var(--ocean); }
+
+.gate-btn {
+  width: 100%;
+  min-height: 54px;
+  padding: 14px 24px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--white);
+  background: var(--ocean);
+  border: none;
+  border-radius: var(--radius);
+  transition: background 0.15s;
+}
+.gate-btn:hover { background: var(--ocean-dark); }
+
+.gate-error {
+  font-size: 0.875rem;
+  color: #C0392B;
+  font-weight: 500;
+}
+
+.gate-back-btn {
+  background: none;
+  border: none;
+  font-size: 0.875rem;
+  color: var(--fog);
+  padding: 8px;
+  margin-top: 4px;
+  cursor: pointer;
+}
+.gate-back-btn:hover { color: var(--ocean); }
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+@media print {
+  .no-print { display: none !important; }
+  #wizard-container { display: none !important; }
+  #password-gate { display: none !important; }
+  #summary-screen {
+    overflow: visible;
+    padding-bottom: 0;
+  }
+  body { background: white; }
+  .phase { box-shadow: none; border: 1px solid #ccc; }
+  .profile-chips { box-shadow: none; border: 1px solid #ccc; }
+}
+
+/* ============================================================
    RESPONSIVE — 640px+
    ============================================================ */
 @media (min-width: 640px) {
@@ -599,4 +780,5 @@ button { font-family: inherit; cursor: pointer; }
   .phase-head { padding: 24px 28px 20px; }
   .line { padding: 14px 28px; }
   .summary-footer { padding: 24px 24px 0; }
+  .lazar-block { padding: 0 24px 20px; }
 }

@@ -41,6 +41,31 @@ function track(path) {
 }
 
 // ============================================================
+// 3b. COMPLEXITY CHECK (for Lazar affiliate block)
+// ============================================================
+function isComplexCase() {
+  // 482 + family (school fees, OVHC, no CCS)
+  if (state.visaKey === 'visa_482' && state.householdType === 'family') return true;
+  // Partner without functional English (second instalment $4,885)
+  if (state.partnerEnglish === false) return true;
+  // 482 + any children (single-parent or couple with kids on temp visa)
+  if (state.visaKey === 'visa_482' && state.childCount > 0) return true;
+  return false;
+}
+
+// ============================================================
+// 3c. PASSWORD GATE (SHA-256, Web Crypto API)
+// Password: MONEY-PERTH12
+// ============================================================
+const PASSWORD_HASH = '2f51a508d42c5572649cc42ebe9ec8704aff916cf78dc6534dbe26c7c0bbd4c8';
+
+async function hashInput(str) {
+  const enc  = new TextEncoder();
+  const buf  = await crypto.subtle.digest('SHA-256', enc.encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ============================================================
 // 4. WIZARD ENGINE
 // ============================================================
 const ALL_CARDS = [
@@ -561,6 +586,7 @@ function bindExchangeRate(el) {
     }
     goForward(getNextCard('exchange_rate'));
   });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') confirm.click(); });
 }
 
 function bindDisclaimer(el) {
@@ -705,6 +731,8 @@ function bindKindyCcs(el) {
           '_income_' + (state.familyIncome !== null ? 'entered' : 'skipped'));
     goForward(getNextCard('kindy_ccs'));
   });
+  rateInput.addEventListener('keydown',   e => { if (e.key === 'Enter') confirm.click(); });
+  incomeInput.addEventListener('keydown', e => { if (e.key === 'Enter') confirm.click(); });
 }
 
 function bindPartnerEnglish(el) {
@@ -756,6 +784,7 @@ function bindSkillsAssessment(el) {
     }
     goForward(getNextCard('skills_assessment'));
   });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') confirm.click(); });
 }
 
 function bindFlightsInput(el) {
@@ -789,6 +818,7 @@ function bindFlightsInput(el) {
     }
     goForward(getNextCard('flights_input'));
   });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') confirm.click(); });
 }
 
 function bindTransport(el) {
@@ -840,6 +870,8 @@ function bindTransport(el) {
     }
     goForward(getNextCard('transport'));
   });
+  const vehicleInput = el.querySelector('#vehicle-cost-input');
+  if (vehicleInput) vehicleInput.addEventListener('keydown', e => { if (e.key === 'Enter') el.querySelector('#transport-confirm')?.click(); });
 }
 
 function bindStayingWithFamily(el) {
@@ -884,8 +916,8 @@ function bindLocation(el) {
 
 function bindSummaryTrigger(el) {
   el.querySelector('#show-summary').addEventListener('click', () => {
-    track('summary/viewed');
-    showSummary();
+    track('summary/gate_shown');
+    showPasswordGate();
   });
 }
 
@@ -1266,6 +1298,68 @@ function showError(el, message) {
 }
 
 // ============================================================
+// 10a. PASSWORD GATE
+// ============================================================
+function showPasswordGate() {
+  document.getElementById('wizard-container').classList.add('hidden');
+
+  let gate = document.getElementById('password-gate');
+  if (!gate) {
+    gate = document.createElement('div');
+    gate.id = 'password-gate';
+    document.body.appendChild(gate);
+  }
+  gate.className = '';
+  gate.innerHTML = `
+    <div class="gate-inner">
+      <div class="gate-logo">🔐</div>
+      <h1 class="gate-title">Резюмето е готово</h1>
+      <p class="gate-sub">За достъп до резюмето ти трябва парола. Намери я в статията на Патреон.</p>
+      <a href="https://www.patreon.com/emigratetoaustralia/posts/kolko-pari-predi-161126612"
+         target="_blank" class="gate-patreon-link">→ Отвори статията в Патреон</a>
+      <div class="gate-input-wrap">
+        <input type="text" id="gate-password-input" class="gate-input"
+          placeholder="ВЪВЕДИ ПАРОЛА"
+          autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+          maxlength="30">
+        <button class="gate-btn" id="gate-submit">Провери →</button>
+      </div>
+      <p class="gate-error hidden" id="gate-error">Грешна парола. Провери статията в Патреон.</p>
+      <button class="gate-back-btn" id="gate-back">← Назад</button>
+    </div>
+  `;
+
+  const input  = gate.querySelector('#gate-password-input');
+  const submit = gate.querySelector('#gate-submit');
+  const errEl  = gate.querySelector('#gate-error');
+
+  // Force uppercase on every keystroke
+  input.addEventListener('input', () => { input.value = input.value.toUpperCase(); });
+  input.focus();
+
+  async function attempt() {
+    const hash = await hashInput(input.value.trim());
+    if (hash === PASSWORD_HASH) {
+      track('summary/password_correct');
+      gate.classList.add('hidden');
+      showSummary();
+    } else {
+      track('summary/password_wrong');
+      errEl.classList.remove('hidden');
+      input.select();
+    }
+  }
+
+  submit.addEventListener('click', attempt);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') attempt(); });
+
+  gate.querySelector('#gate-back').addEventListener('click', () => {
+    gate.classList.add('hidden');
+    document.getElementById('wizard-container').classList.remove('hidden');
+  });
+}
+
+// ============================================================
 // 10. SUMMARY SCREEN
 // ============================================================
 function showSummary() {
@@ -1279,6 +1373,8 @@ function showSummary() {
   screen.innerHTML = buildSummaryHTML(predep, arrival, monthly);
   screen.scrollTop = 0;
   document.getElementById('restart-btn').addEventListener('click', resetApp);
+  document.getElementById('print-btn').addEventListener('click', () => window.print());
+  track('summary/viewed');
 }
 
 function buildSummaryHTML(predep, arrival, monthly) {
@@ -1293,9 +1389,11 @@ function buildSummaryHTML(predep, arrival, monthly) {
       ${buildPhaseBlock('✈️ При пристигане',   arrival)}
       ${buildPhaseBlock('📅 Месечни разходи',  monthly)}
     </div>
+    ${isComplexCase() ? buildLazarBlock() : ''}
     <div class="summary-footer">
       <p class="disclaimer">Всички суми са ориентировъчни. Препоръчвам ти буфер от 20–30% над изчисленото. Тази калкулация не е финансов съвет.</p>
-      <button class="restart-btn" id="restart-btn">← Започни отначало</button>
+      <button class="print-btn no-print" id="print-btn">🖨️ Принтирай / Запази като PDF</button>
+      <button class="restart-btn no-print" id="restart-btn">← Започни отначало</button>
     </div>
   `;
 }
@@ -1389,8 +1487,18 @@ function buildPhaseBlock(title, calc) {
     </div>`;
 }
 
+function buildLazarBlock() {
+  return `
+    <div class="lazar-block">
+      <p class="lazar-text">Виждам, че ситуацията ти е малко по-сложна. Мислил ли си да поговориш с миграционен агент? Аз лично работя с Лазар Петканчин (MARN 1688444) и мога да го препоръчам. Ако решиш да се свържеш с него, линкът по-долу ти дава AUD 50 отстъпка. Твой избор.</p>
+      <a href="https://app.acuityscheduling.com/schedule/ed28cd89/appointment/30840286/calendar/3844792?certificate=Code1"
+         target="_blank" class="lazar-cta">Запази час с Лазар →</a>
+      <p class="lazar-disclosure">Партньорска връзка — ако запазиш час, аз може да получа комисионна.</p>
+    </div>
+  `;
+}
+
 // ============================================================
-// 11. INIT + RESET
 // ============================================================
 function resetApp() {
   Object.assign(state, {
