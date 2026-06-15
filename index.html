@@ -2,51 +2,42 @@
 <html lang="bg">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Бюджет Пърт</title>
-  <meta name="description" content="Сравни разходите си в България и Пърт, Австралия">
-  <meta name="theme-color" content="#0252a3">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1A4E6E">
+  <meta name="description" content="Изчисли разходите за преместване в Пърт, Австралия — визи, жилище и месечни разходи.">
+  <title>Perth Budget Calculator</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- ── INPUT SCREEN ─────────────────────────────────────── -->
-  <div id="screen-input" class="screen active">
-    <header class="app-header">
-      <div class="header-logo">
-        <span class="logo-mark">БП</span>
+  <!-- Wizard -->
+  <div id="wizard-container">
+    <div id="wizard-top">
+      <button id="back-btn" class="back-btn" aria-label="Назад" style="visibility:hidden">←</button>
+      <div id="progress-bar" role="progressbar" aria-label="Напредък">
+        <div id="progress-fill"></div>
       </div>
-      <div>
-        <h1>Бюджет Пърт <span id="app-version" class="app-version"></span></h1>
-        <p class="subtitle">Сравни разходите си в България и Пърт</p>
-      </div>
-    </header>
-
-    <main class="input-main" id="input-main">
-      <!-- rendered by renderInputScreen() in app.js -->
-    </main>
+    </div>
+    <div id="card-viewport">
+      <div id="card-current" class="card"></div>
+    </div>
   </div>
 
-  <!-- ── RESULTS SCREEN ────────────────────────────────────── -->
-  <div id="screen-results" class="screen">
-    <header class="results-header no-print">
-      <button class="btn-back" id="btn-back">← Промени</button>
-      <span class="results-title">Бюджет Пърт</span>
-      <button class="btn-print" id="btn-print">🖨 PDF</button>
-    </header>
+  <!-- Summary -->
+  <div id="summary-screen" class="hidden" role="main"></div>
 
-    <main id="results-main" class="results-main">
-      <!-- Rendered by app.js -->
-    </main>
-  </div>
+  <!-- GoatCounter -->
+  <script>
+    window.goatcounter = { path: function(p) { return location.host + p; } }
+  </script>
+  <script data-goatcounter="https://emigratetoaustralia.goatcounter.com/count"
+          async src="//gc.zgo.at/count.js"></script>
 
   <script src="app.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js');
-    }
-  </script>
 </body>
 </html>

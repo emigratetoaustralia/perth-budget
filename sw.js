@@ -1,13 +1,11 @@
-const CACHE = 'perth-budget-v5';
+const CACHE  = 'perth-budget-v12';
 const ASSETS = [
-  './',
-  './index.html',
-  './app.js',
-  './style.css',
-  './data.json',
-  './manifest.json',
-  './icons/icon-192.svg',
-  './icons/icon-512.svg',
+  '/',
+  '/index.html',
+  '/app.js',
+  '/style.css',
+  '/data.json',
+  '/manifest.json'
 ];
 
 self.addEventListener('install', e => {
@@ -20,7 +18,9 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      Promise.all(
+        keys.filter(k => k !== CACHE).map(k => caches.delete(k))
+      )
     )
   );
   self.clients.claim();
