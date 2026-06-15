@@ -1,27 +1,21 @@
 /* ============================================================
    DESIGN TOKENS
-   Palette: WA red-earth sand background, deep Indian Ocean
-   blue as primary, Perth gold accent, eucalypt for success.
-   Typefaces: Plus Jakarta Sans (display/headings) +
-   Inter (body/data) — chosen for strong Cyrillic support
-   and modern geometric warmth.
    ============================================================ */
 :root {
-  --ocean:      #1A4E6E;
-  --ocean-dark: #153F58;
-  --sky:        #2980B9;
-  --gold:       #D4921A;
-  --gold-bg:    rgba(212, 146, 26, 0.08);
-  --gold-border:rgba(212, 146, 26, 0.28);
-  --eucalypt:   #3D7A56;
-  --sand:       #F2EBD9;
-  --cloud:      #FDFAF5;
-  --white:      #FFFFFF;
-  --ink:        #1A1A1A;
-  --ink-2:      #3A3A3A;
-  --fog:        #6B7280;
-  --border:     #E4DDD0;
-  --border-2:   rgba(228, 221, 208, 0.6);
+  --ocean:       #1A4E6E;
+  --ocean-dark:  #153F58;
+  --sky:         #2980B9;
+  --gold:        #D4921A;
+  --gold-bg:     rgba(212, 146, 26, 0.08);
+  --gold-border: rgba(212, 146, 26, 0.28);
+  --eucalypt:    #3D7A56;
+  --sand:        #F2EBD9;
+  --white:       #FFFFFF;
+  --ink:         #1A1A1A;
+  --ink-2:       #3A3A3A;
+  --fog:         #6B7280;
+  --border:      #E4DDD0;
+  --border-soft: rgba(228, 221, 208, 0.6);
 
   --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-body:    'Inter', system-ui, sans-serif;
@@ -29,20 +23,14 @@
   --radius-sm: 8px;
   --radius:    14px;
   --radius-lg: 20px;
-  --radius-xl: 28px;
 
   --shadow:    0 2px 16px rgba(26, 78, 110, 0.08);
-  --shadow-lg: 0 6px 32px rgba(26, 78, 110, 0.14);
 }
 
 /* ============================================================
    RESET + BASE
    ============================================================ */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { height: 100%; }
 
@@ -54,19 +42,11 @@ body {
   color: var(--ink);
   background: var(--sand);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  color: var(--sky);
-  text-decoration: none;
-}
+a { color: var(--sky); text-decoration: none; }
 a:hover { text-decoration: underline; }
-
-button {
-  font-family: inherit;
-  cursor: pointer;
-}
+button { font-family: inherit; cursor: pointer; }
 
 /* ============================================================
    UTILITY
@@ -74,7 +54,7 @@ button {
 .hidden { display: none !important; }
 
 /* ============================================================
-   WIZARD CONTAINER
+   WIZARD LAYOUT
    ============================================================ */
 #wizard-container {
   min-height: 100dvh;
@@ -82,9 +62,6 @@ button {
   flex-direction: column;
 }
 
-/* ============================================================
-   TOP BAR (back button + progress)
-   ============================================================ */
 #wizard-top {
   display: flex;
   align-items: center;
@@ -107,14 +84,11 @@ button {
   border-radius: var(--radius-sm);
   transition: background 0.15s;
 }
-
 .back-btn:hover { background: rgba(26, 78, 110, 0.08); }
 
 /* ============================================================
    PROGRESS BAR
-   Signature element: gold thread running through the wizard.
-   Only colored element in the top bar — draws the eye
-   without demanding attention.
+   Gold thread — the only accent in the top bar.
    ============================================================ */
 #progress-bar {
   flex: 1;
@@ -133,8 +107,7 @@ button {
 }
 
 /* ============================================================
-   CARD VIEWPORT
-   overflow: hidden clips the horizontal slide animation.
+   CARD VIEWPORT + CARD
    ============================================================ */
 #card-viewport {
   flex: 1;
@@ -142,12 +115,6 @@ button {
   overflow: hidden;
 }
 
-/* ============================================================
-   CARD
-   Full-width absolute so translateX(100%) moves it exactly
-   one viewport-width off-screen — clean horizontal slide.
-   Content is centered within via flex + max-width on children.
-   ============================================================ */
 .card {
   position: absolute;
   top: 0;
@@ -163,10 +130,8 @@ button {
 
 /* ============================================================
    MESSAGE BUBBLE
-   Editorial left-border treatment instead of a chat bubble
-   shape. Feels premium and "friend giving advice" rather
-   than chatbot. The 3px ocean-blue rule is the visual
-   anchor of every card.
+   Editorial left-border treatment. 3px ocean-blue rule
+   anchors every card — the friend speaking first.
    ============================================================ */
 .msg-bubble {
   width: 100%;
@@ -181,10 +146,7 @@ button {
   animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-.msg-bubble strong {
-  font-weight: 700;
-  color: var(--ocean);
-}
+.msg-bubble strong { font-weight: 700; color: var(--ocean); }
 
 .msg-note {
   display: block;
@@ -197,9 +159,7 @@ button {
 
 /* ============================================================
    CARD INPUTS
-   Staggered entrance: message appears at 0ms, inputs at
-   150ms — creates the sense of the friend speaking first,
-   then offering options.
+   Staggered entrance: inputs at 150ms after message.
    ============================================================ */
 .card-inputs {
   width: 100%;
@@ -210,8 +170,15 @@ button {
   animation: slideUp 0.35s 0.15s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
+.input-label {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  padding-top: 4px;
+}
+
 /* ============================================================
-   CHOICE BUTTONS
+   CHOICE BUTTONS — stacked (default)
    ============================================================ */
 .choice-group {
   display: flex;
@@ -219,11 +186,20 @@ button {
   gap: 10px;
 }
 
+/* ============================================================
+   CHOICE BUTTONS — inline (binary options)
+   Used for 2-option selections so both are visible at once.
+   ============================================================ */
+.choice-group--inline {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
 .choice-btn {
-  width: 100%;
   min-height: 54px;
-  padding: 14px 18px;
-  text-align: left;
+  padding: 14px 16px;
+  text-align: center;
   font-family: var(--font-body);
   font-size: 0.9375rem;
   font-weight: 500;
@@ -234,6 +210,12 @@ button {
   transition: border-color 0.15s, background 0.15s, color 0.15s;
   line-height: 1.4;
 }
+
+/* Stacked buttons: full width */
+.choice-group .choice-btn { width: 100%; text-align: left; }
+
+/* Inline buttons: equal flex share */
+.choice-group--inline .choice-btn { flex: 1; }
 
 .choice-btn:hover {
   border-color: var(--sky);
@@ -264,31 +246,30 @@ button {
   margin-top: 4px;
   transition: background 0.15s, transform 0.1s;
 }
-
 .primary-btn:hover  { background: var(--ocean-dark); }
 .primary-btn:active { transform: scale(0.98); }
 
 /* ============================================================
-   EXCHANGE RATE INPUT
+   AMOUNT INPUT (for flights, vehicle, skills)
    ============================================================ */
-.rate-row {
+.input-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 18px;
+  padding: 14px 16px;
   background: var(--white);
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
 }
 
-.rate-label {
-  font-size: 0.875rem;
-  color: var(--fog);
-  white-space: nowrap;
-  flex-shrink: 0;
+.amount-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
 }
 
-.rate-input {
+.amount-input {
   flex: 1;
   min-width: 0;
   border: none;
@@ -300,8 +281,15 @@ button {
   background: transparent;
   text-align: center;
 }
+.amount-input::placeholder { color: var(--border); }
 
-.rate-input::placeholder { color: var(--border); }
+.amount-label,
+.amount-suffix {
+  font-size: 0.875rem;
+  color: var(--fog);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 
 /* ============================================================
    CHILD COUNTER
@@ -316,21 +304,12 @@ button {
   border-radius: var(--radius);
 }
 
-.counter-label {
-  font-size: 0.9375rem;
-  font-weight: 500;
-  color: var(--ink);
-}
+.counter-label { font-size: 0.9375rem; font-weight: 500; }
 
-.counter-controls {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
+.counter-controls { display: flex; align-items: center; gap: 20px; }
 
 .counter-btn {
-  width: 40px;
-  height: 40px;
+  width: 40px; height: 40px;
   border-radius: 50%;
   border: 1.5px solid var(--ocean);
   background: none;
@@ -338,12 +317,9 @@ button {
   font-size: 22px;
   font-weight: 300;
   line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   transition: background 0.15s;
 }
-
 .counter-btn:hover { background: rgba(26, 78, 110, 0.08); }
 
 .counter-value {
@@ -356,7 +332,7 @@ button {
 }
 
 /* ============================================================
-   INFO NOTE (e.g. partner English / second instalment)
+   INFO NOTE
    ============================================================ */
 .info-note {
   padding: 14px 16px;
@@ -369,64 +345,26 @@ button {
 }
 
 /* ============================================================
-   SOURCE LINK
+   SOURCE LINK + ERRORS
    ============================================================ */
-.source-link {
-  color: var(--sky);
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-decoration: none;
-}
-
+.source-link { color: var(--sky); font-size: 0.875rem; font-weight: 500; }
 .source-link:hover { text-decoration: underline; }
 
-/* ============================================================
-   FIELD ERROR
-   ============================================================ */
-.field-error {
-  font-size: 0.8125rem;
-  color: #C0392B;
-  padding: 4px 2px 0;
-}
+.field-error { font-size: 0.8125rem; color: #C0392B; padding: 4px 2px 0; }
 
-/* ============================================================
-   LOAD ERROR
-   ============================================================ */
-.load-error {
-  padding: 48px 20px;
-  text-align: center;
-  color: var(--fog);
-  font-size: 0.9375rem;
-}
+.load-error { padding: 48px 20px; text-align: center; color: var(--fog); font-size: 0.9375rem; }
 
 /* ============================================================
    ANIMATIONS
    ============================================================ */
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .msg-bubble,
-  .card-inputs {
-    animation: none;
-  }
-  #progress-fill {
-    transition: none;
-  }
-  .primary-btn,
-  .choice-btn,
-  .back-btn,
-  .counter-btn {
-    transition: none;
-  }
+  .msg-bubble, .card-inputs { animation: none; }
+  #progress-fill, .primary-btn, .choice-btn, .back-btn, .counter-btn { transition: none; }
 }
 
 /* ============================================================
@@ -436,12 +374,13 @@ button {
   min-height: 100dvh;
   background: var(--sand);
   padding-bottom: 80px;
+  overflow-y: auto;
 }
 
 .summary-header {
   max-width: 640px;
   margin: 0 auto;
-  padding: 40px 20px 24px;
+  padding: 40px 20px 20px;
 }
 
 .summary-title {
@@ -453,16 +392,63 @@ button {
   line-height: 1.2;
 }
 
-.summary-sub {
-  font-size: 0.9375rem;
+.summary-sub { font-size: 0.9375rem; color: var(--fog); }
+
+/* ============================================================
+   PROFILE CARD (user selections)
+   ============================================================ */
+.profile-card {
+  max-width: 640px;
+  margin: 0 auto 16px;
+  padding: 0 20px;
+}
+
+.profile-title {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--fog);
+  margin-bottom: 10px;
+}
+
+.profile-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 4px 0;
+  box-shadow: var(--shadow);
+}
+
+.profile-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.profile-chip:last-child { border-bottom: none; }
+
+.chip-label {
+  font-size: 0.8125rem;
+  color: var(--fog);
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.chip-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.4;
 }
 
 /* ============================================================
    PHASE BLOCKS
-   Three phases get left-border color coding:
-   predeparture = ocean, arrival = gold, monthly = eucalypt.
-   Applied via nth-child to keep markup clean.
+   Top border color codes each phase.
    ============================================================ */
 .phases {
   display: flex;
@@ -479,7 +465,6 @@ button {
   box-shadow: var(--shadow);
   overflow: hidden;
 }
-
 .phase:nth-child(1) { border-top: 3px solid var(--ocean); }
 .phase:nth-child(2) { border-top: 3px solid var(--gold); }
 .phase:nth-child(3) { border-top: 3px solid var(--eucalypt); }
@@ -503,12 +488,18 @@ button {
 
 .phase-total {
   font-family: var(--font-display);
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--ocean);
   text-align: right;
   flex-shrink: 0;
-  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.phase-eur {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--fog);
 }
 
 .phase-lines { padding: 4px 0; }
@@ -518,25 +509,32 @@ button {
    ============================================================ */
 .line {
   padding: 12px 20px;
-  border-bottom: 1px solid var(--border-2);
+  border-bottom: 1px solid var(--border-soft);
 }
-
 .line:last-child { border-bottom: none; }
 
+.line-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .line-label {
-  display: block;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--ink-2);
-  margin-bottom: 2px;
+  flex: 1;
+  line-height: 1.4;
 }
 
 .line-amount {
-  display: block;
   font-family: var(--font-display);
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--ink);
+  text-align: right;
+  flex-shrink: 0;
   line-height: 1.4;
 }
 
@@ -546,30 +544,15 @@ button {
   color: var(--fog);
 }
 
-.line-range {
-  display: block;
-  font-size: 0.8125rem;
-  font-weight: 400;
-  color: var(--fog);
-  margin-top: 2px;
-}
-
 .line-note {
-  margin-top: 6px;
+  margin-top: 5px;
   font-size: 0.8125rem;
   color: var(--fog);
   line-height: 1.55;
 }
 
-/* Excluded items (skills assessment, WA nomination) */
-.line--info {
-  background: rgba(212, 146, 26, 0.04);
-}
-
-.line-amount--range {
-  color: var(--gold);
-  font-weight: 600;
-}
+/* Excluded / info-only lines */
+.line--info { background: rgba(212, 146, 26, 0.04); }
 
 /* ============================================================
    SUMMARY FOOTER
@@ -577,7 +560,7 @@ button {
 .summary-footer {
   max-width: 640px;
   margin: 0 auto;
-  padding: 24px 20px 0;
+  padding: 20px 20px 0;
 }
 
 .disclaimer {
@@ -600,34 +583,20 @@ button {
   border-radius: var(--radius);
   transition: background 0.15s;
 }
-
 .restart-btn:hover { background: rgba(26, 78, 110, 0.06); }
 
 /* ============================================================
    RESPONSIVE — 640px+
    ============================================================ */
 @media (min-width: 640px) {
-  .msg-bubble {
-    font-size: 1.25rem;
-    padding-left: 24px;
-  }
-
-  .choice-btn {
-    font-size: 1rem;
-    min-height: 58px;
-  }
-
+  .msg-bubble { font-size: 1.25rem; padding-left: 24px; }
+  .choice-btn { font-size: 1rem; min-height: 58px; }
   .card { padding: 40px 24px 80px; }
-
-  .summary-header { padding: 56px 24px 32px; }
-
+  .summary-header { padding: 56px 24px 24px; }
   .summary-title { font-size: 2.25rem; }
-
+  .profile-card { padding: 0 24px; }
   .phases { padding: 0 24px; }
-
   .phase-head { padding: 24px 28px 20px; }
-
   .line { padding: 14px 28px; }
-
-  .summary-footer { padding: 28px 24px 0; }
+  .summary-footer { padding: 24px 24px 0; }
 }

@@ -3,55 +3,53 @@
     "version": "0.12",
     "currency_anchor_eur_per_aud": 0.61,
     "source_links": {
-      "visa_fees": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/fees-and-charges/current-visa-pricing",
-      "skills_assessment": "https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list",
-      "wa_nomination": "https://www.wa.gov.au/government/document-collections/skilled-migration-wa",
-      "reiwa": "https://reiwa.com.au/the-wa-market/",
-      "ovhc": "https://www.allianzcare.com.au/en/individuals/overseas-health-cover.html",
-      "dot_licence": "https://www.transport.wa.gov.au/licensing/get-a-car-licence.asp",
-      "revenue_wa_duty": "https://www.revenue.wa.gov.au/duties/vehicle-licence-duty"
+      "visa_fees":        "https://immi.homeaffairs.gov.au/visas/getting-a-visa/fees-and-charges/current-visa-pricing",
+      "skills_assessment":"https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list",
+      "wa_nomination":    "https://www.wa.gov.au/government/document-collections/skilled-migration-wa",
+      "reiwa":            "https://reiwa.com.au/the-wa-market/",
+      "ovhc":             "https://www.allianzcare.com.au/en/individuals/overseas-health-cover.html",
+      "dot_licence":      "https://www.transport.wa.gov.au/licensing/get-a-car-licence.asp",
+      "revenue_wa_duty":  "https://www.revenue.wa.gov.au/duties/vehicle-licence-duty",
+      "transperth":       "https://www.transperth.wa.gov.au/Fares-Tickets/Fares"
     }
+  },
+
+  "disclaimer": {
+    "paragraphs_bg": [
+      "Perth Budget Calculator е инструмент за ориентация — не финансов съветник. Цифрите тук не са персонализирана финансова препоръка.",
+      "Всички суми са приблизителни, базирани на публично достъпни данни от REIWA, Dept of Home Affairs и други официални източници. Реалните разходи варират според твоите лични обстоятелства.",
+      "За конкретна препоръка — говори с лицензиран финансов консултант и регистриран миграционен агент."
+    ],
+    "confirm_bg": "Разбрах — продължи →"
   },
 
   "visa": {
     "options": [
       {
         "key": "pr_189",
-        "label_bg": "Постоянно пребиваване - подклас 189 (независим)",
-        "fees": {
-          "primary": 4910,
-          "extra_adult": 2455,
-          "child": 1230
-        },
+        "label_bg": "Подклас 189 — независим (постоянно)",
+        "fees": { "primary": 4910, "extra_adult": 2455, "child": 1230 },
         "nomination_fee": null,
         "nomination_note_bg": null
       },
       {
         "key": "pr_190",
-        "label_bg": "Постоянно пребиваване - подклас 190 (щатска номинация)",
-        "fees": {
-          "primary": 4910,
-          "extra_adult": 2455,
-          "child": 1230
-        },
+        "label_bg": "Подклас 190 — щатска номинация (постоянно)",
+        "fees": { "primary": 4910, "extra_adult": 2455, "child": 1230 },
         "nomination_fee": 200,
-        "nomination_note_bg": "Западна Австралия начислява допълнителна такса от $200 AUD за номинация по подклас 190. Тази сума не е включена в резюмето по-горе - провери актуалната такса на сайта на Skilled Migration WA."
+        "nomination_note_bg": "Западна Австралия начислява $200 AUD за номинация по подклас 190. Тази сума не е включена в резюмето — провери актуалната такса на сайта на Skilled Migration WA."
       },
       {
         "key": "visa_482",
-        "label_bg": "Временна работна виза - подклас 482",
-        "fees": {
-          "primary": 3210,
-          "extra_adult": 0,
-          "child": 805
-        },
+        "label_bg": "Подклас 482 — работна виза (временно)",
+        "fees": { "primary": 3210, "extra_adult": 3210, "child": 805 },
         "nomination_fee": null,
         "nomination_note_bg": null
       }
     ],
     "second_instalment": {
       "amount": 4895,
-      "note_bg": "Ако партньорът ти няма валиден резултат от езиков изпит (IELTS или PTE), австралийското правителство добавя задължителна втора вноска от $4,895 AUD. Тази сума е включена в резюмето по-горе."
+      "note_bg": "Ако партньорът ти няма валиден резултат от езиков изпит, правителството добавя задължителна втора вноска от $4,895 AUD. Включена е в резюмето."
     }
   },
 
@@ -59,15 +57,16 @@
     "english_test": {
       "amount": 375,
       "applies_to": ["pr_189", "pr_190"],
-      "note_bg": "Езиков изпит IELTS или PTE Academic. Таксата е приблизителна - провери актуалната цена при регистрация за изпита.",
+      "note_bg": "Приблизителна цена за IELTS или PTE Academic. Провери актуалната цена при записване.",
       "source_key": "visa_fees"
     },
     "skills_assessment": {
       "range_min": 500,
       "range_max": 2000,
-      "included_in_total": false,
       "applies_to": ["pr_189", "pr_190"],
-      "note_bg": "Таксата варира значително според професията и оценяващия орган. Не е включена в резюмето - провери конкретната такса за твоята професия на сайта на имиграционното министерство.",
+      "input_prompt_bg": "Знаеш ли вече колко ще струва оценката на уменията ти?",
+      "input_placeholder_bg": "Например: 800",
+      "note_bg": "Таксата варира от $500 до $2,000 AUD според професията и оценяващия орган. Ако не знаеш конкретната сума, ще покажем диапазона.",
       "source_key": "skills_assessment"
     }
   },
@@ -76,7 +75,9 @@
     "flights": {
       "per_person_min": 1200,
       "per_person_max": 1800,
-      "note_bg": "Приблизителна цена за самолетен билет София - Пърт (еднопосочен, с връзка). Цената варира значително според сезона и времето на резервация. Препоръчваме да резервираш поне 3-4 месеца предварително."
+      "input_prompt_bg": "Имаш ли вече конкретна оферта за билетите?",
+      "input_placeholder_bg": "Обща цена за всички билети в AUD",
+      "note_bg": "Цената варира според сезона и колко рано резервираш. Препоръчваме поне 3-4 месеца предварително."
     },
     "temp_accommodation": {
       "default_weeks": 4,
@@ -85,18 +86,21 @@
         { "max_persons": 4, "weekly": 1400 },
         { "max_persons": 99, "weekly": 1800 }
       ],
-      "note_bg": "Временно настаняване в сервизиран апартамент докато намерите постоянен дом. Повечето семейства се нуждаят от 3 до 6 седмици. Изчислението използва 4 седмици като стандарт."
+      "note_bg": "Временно жилище докато намериш постоянен дом. Повечето хора се нуждаят от 3 до 6 седмици."
     },
     "vehicle": {
       "default_cost": 14000,
+      "default_cost_note_bg": "Ориентировъчна цена за употребявана кола в добро състояние",
+      "input_prompt_bg": "Имаш ли вече бюджет за кола?",
+      "input_placeholder_bg": "Например: 20000",
       "duty_brackets": [
-        { "max": 25000, "rate": 0.0275, "label": "до $25,000" },
-        { "max": 50000, "rate": "sliding", "label": "$25,001 - $50,000" },
-        { "max": null,  "rate": 0.065,  "label": "над $50,000" }
+        { "max": 25000, "rate": 0.0275 },
+        { "max": 50000, "rate": "sliding" },
+        { "max": null,  "rate": 0.065 }
       ],
       "licence_and_tests": 382,
-      "note_bg_duty": "Гербова такса върху стойността на автомобила, начислявана от RevenueWA. За кола от $14,000 това е около $385. Изчислено автоматично от въведената от теб цена.",
-      "note_bg_licence": "Шофьорската книжка от България не се признава директно в Западна Австралия. Ще трябва да положиш теоретичен и практически изпит. Таксата включва теория, HPT и издаване на книжка.",
+      "note_bg_duty": "RevenueWA начислява гербова такса върху стойността на автомобила. Изчислена автоматично от цената, която въведе.",
+      "note_bg_licence": "Шофьорската книжка от България не се признава в Западна Австралия. Ще трябва да полагаш теоретичен и практически изпит.",
       "source_key": "revenue_wa_duty",
       "licence_source_key": "dot_licence"
     }
@@ -106,28 +110,12 @@
     "bond_weeks": 4,
     "advance_weeks": 2,
     "source_key": "reiwa",
-    "city_premium_note_bg": "Имотите в крайбрежни и централни квартали (Скарбъро, Котеслоу, Фрийментъл, Суbiако) са средно с около 25% по-скъпи от предградията. Котеслоу е значително над средното.",
+    "city_premium_note_bg": "Жилищата в крайбрежни и централни квартали (Scarborough, Cottesloe, Fremantle, Subiaco) са средно с около 25% по-скъпи от предградията. Cottesloe е значително над средното.",
     "types": {
-      "unit": {
-        "label_bg": "Апартамент / юнит",
-        "weekly_suburbs": 680,
-        "weekly_city": 850
-      },
-      "townhouse": {
-        "label_bg": "Таунхаус",
-        "weekly_suburbs": 720,
-        "weekly_city": 900
-      },
-      "house_3br": {
-        "label_bg": "Къща с 3 спални",
-        "weekly_suburbs": 750,
-        "weekly_city": 950
-      },
-      "house_4br": {
-        "label_bg": "Къща с 4 спални",
-        "weekly_suburbs": 820,
-        "weekly_city": 1050
-      }
+      "unit":      { "label_bg": "Апартамент / юнит",  "weekly_suburbs": 680, "weekly_city": 850 },
+      "townhouse": { "label_bg": "Таунхаус",            "weekly_suburbs": 720, "weekly_city": 900 },
+      "house_3br": { "label_bg": "Къща с 3 спални",    "weekly_suburbs": 750, "weekly_city": 950 },
+      "house_4br": { "label_bg": "Къща с 4 спални",    "weekly_suburbs": 820, "weekly_city": 1050 }
     }
   },
 
@@ -135,24 +123,40 @@
     "groceries": {
       "anchor_family_3": 867,
       "ratios": [0.548, 0.836, 1.0, 1.257, 1.470],
-      "note_bg": "Базирано на пазаруване предимно от Aldi за семейство от 3 души. Пресни продукти, биологични храни и специалитети могат значително да увеличат сметката. Съотношенията са нелинейни - по-голямото домакинство се храни по-ефективно."
+      "note_bg": "Базирано на пазаруване основно от Aldi за семейство от 3. Ако пазаруваш от Coles или Woolworths, заложи около 20% повече."
     },
     "utilities": {
       "base": 250,
       "per_extra_person": 50,
-      "note_bg": "Включва ток, вода и интернет. Климатиците в Пърт работят интензивно от декември до март и могат значително да увеличат сметката за ток."
+      "note_bg": "Ток, вода и интернет. Климатиците в Пърт работят интензивно от декември до март и могат значително да вдигнат сметката за ток."
+    },
+    "phone": {
+      "per_adult": 55,
+      "note_bg": "Месечен план с включени данни. В Австралия има добри оферти от Boost Mobile, Aldi Mobile и Woolworths Mobile на тази цена."
     },
     "transport": {
       "car_running_monthly": 350,
-      "transperth_adult_monthly": 190,
-      "note_bg_car": "Приблизителни разходи за гориво, застраховка и основна поддръжка. Не включва годишна регистрация (~$800) и непредвидени ремонти.",
-      "note_bg_transperth": "Месечна карта Transperth за един възрастен. Пърт е силно разпръснат град - общественият транспорт покрива добре центъра и основните коридори, но не стига до всички квартали."
+      "transperth_adult_monthly": 145,
+      "note_bg_car": "Гориво, задължителна застраховка (CTP) и основна поддръжка. Не включва годишна регистрация (~$800) и непредвидени ремонти.",
+      "note_bg_transperth": "Базирано на новата тарифа Go Anywhere от януари 2026 — $2.80 на пътуване навсякъде в мрежата с SmartRider с автодовареждане.",
+      "source_key": "transperth"
+    },
+    "dining": {
+      "solo_min": 150,   "solo_max": 350,
+      "couple_min": 250, "couple_max": 500,
+      "family_min": 300, "family_max": 600,
+      "note_bg": "Хранене навън, кафе и доставки. Пърт има страхотна кафе и ресторантска сцена — лесно е да похарчиш повече от планираното."
+    },
+    "kids_activities": {
+      "per_child_min": 100,
+      "per_child_max": 250,
+      "note_bg": "Спорт, плуване, извънкласни занимания. WA предлага много безплатни дейности — паркове, плажове, библиотеки."
     },
     "ovhc": {
       "single_monthly": 170,
       "family_monthly": 420,
       "condition": "visa_482",
-      "note_bg": "Задължителна здравна застраховка за притежатели на временни визи (OVHC). Сумата е базирана на Allianz Mid Working Cover като еталон. Цените варират според застрахователя и нивото на покритие.",
+      "note_bg": "Задължителна здравна застраховка за притежатели на временни визи (OVHC). Базирано на Allianz Mid Working Cover като ориентир. Цените варират.",
       "source_key": "ovhc"
     },
     "school": {
@@ -160,8 +164,8 @@
       "subsequent_child_monthly": 80,
       "registration_one_off": 285,
       "condition": "visa_482",
-      "guard_rail": "fee is per family not per child - first child $430/mo, each additional child $80/mo regardless of count",
-      "note_bg": "Задължителна такса за обучение в държавните училища за деца на временни визи. Таксата е на семейство, не на дете - първото дете в училищна възраст е $430/мес, всяко следващо е $80/мес. Еднократна такса за регистрация $285."
+      "guard_rail": "fee is per family not per child - first child $430/mo, each additional child $80/mo",
+      "note_bg": "Задължителна такса за обучение в държавните училища за деца на временни визи. Таксата е на семейство — $430/мес за първото дете, $80/мес за всяко следващо. Еднократна регистрация $285."
     }
   }
 }
