@@ -12,13 +12,16 @@ const state = {
   visaKey:              null,
   householdType:        null,
   adultCount:           1,
-  childCount:           0,   // derived: kindyCount + schoolCount
-  kindyCount:           0,   // children 0-4 yrs
-  schoolCount:          0,   // children 5-18 yrs
+  childCount:           0,    // derived: kindyCount + schoolCount
+  kindyCount:           0,    // children 0-4 yrs
+  schoolCount:          0,    // children 5-18 yrs
+  kindyDaysPerWeek:     5,    // days/week at Long Day Care (all kindy children)
+  kindyDailyRate:       null, // AUD/day — null = use DATA.ccs.daily_rate_default
+  familyIncome:         null, // combined gross annual — null = show range
   partnerEnglish:       null,
-  skillsAssessmentCost: null,   // null = use range; number = user input
-  flightsCost:          null,   // null = use range; number = user input
-  vehicleCost:          null,   // null = use default $14k; number = user input
+  skillsAssessmentCost: null,
+  flightsCost:          null,
+  vehicleCost:          null,
   transport:            null,
   stayingWithFamily:    null,
   propertyType:         null,
@@ -45,6 +48,8 @@ const ALL_CARDS = [
   'disclaimer',
   'visa_type',
   'household',
+  'kindy_days',          // conditional: kindyCount > 0
+  'kindy_ccs',           // conditional: kindyCount > 0 AND PR
   'partner_english',     // conditional: PR + couple or family
   'skills_assessment',   // conditional: PR only
   'flights_input',
@@ -62,6 +67,13 @@ const ANIM_MS      = 320;
 
 function getActiveCards() {
   return ALL_CARDS.filter(key => {
+    if (key === 'kindy_days') {
+      return state.kindyCount > 0;
+    }
+    if (key === 'kindy_ccs') {
+      return state.kindyCount > 0 &&
+             (state.visaKey === 'pr_189' || state.visaKey === 'pr_190');
+    }
     if (key === 'partner_english') {
       return (state.visaKey === 'pr_189' || state.visaKey === 'pr_190') &&
              (state.householdType === 'couple' || state.householdType === 'family');
@@ -151,6 +163,8 @@ function renderCard(key) {
     disclaimer:         cardDisclaimer,
     visa_type:          cardVisaType,
     household:          cardHousehold,
+    kindy_days:         cardKindyDays,
+    kindy_ccs:          cardKindyCcs,
     partner_english:    cardPartnerEnglish,
     skills_assessment:  cardSkillsAssessment,
     flights_input:      cardFlightsInput,
@@ -173,8 +187,8 @@ function choiceBtn(value, label, selected) {
 
 // --- Card 1: Exchange rate ---
 function cardExchangeRate() {
-  const anchor  = DATA.meta.currency_anchor_eur_per_aud;
-  const hasEur  = state.eurPerAud !== null;
+  const anchor = DATA.meta.currency_anchor_eur_per_aud;
+  const hasEur = state.eurPerAud !== null;
   return `
     ${msg(`Здравей! Аз ще те преведа стъпка по стъпка през всичко, което трябва да знаеш за разходите при преместване в Пърт.<br><br>Всички суми са в австралийски долари (AUD). Искаш ли да виждаш и приблизителните стойности в евро?<br><br><span class="msg-note">Насочващ курс: 1 AUD = ${anchor} EUR (средата на 2026)</span>`)}\
     <div class="card-inputs">
@@ -220,7 +234,6 @@ function cardVisaType() {
 }
 
 // --- Card 4: Household ---
-// Two age-split child counters shown when householdType === 'family'
 function cardHousehold() {
   const isFamily = state.householdType === 'family';
   return `
@@ -262,11 +275,65 @@ function cardHousehold() {
   `;
 }
 
-// --- Card 5: Partner English (conditional) ---
+// --- Card 5: Kindy days (conditional: kindyCount > 0) ---
+function cardKindyDays() {
+  const plural  = state.kindyCount > 1 ? 'децата' : 'детето';
+  const days    = state.kindyDaysPerWeek;
+  const labels  = ['1 ден', '2 дни', '3 дни', '4 дни', '5 дни'];
+  return `
+    ${msg(`Колко дни в седмицата ще ходи ${plural} на детска градина?`)}\
+    <div class="card-inputs">
+      <div class="choice-group--inline">
+        ${[1,2,3,4,5].map(d => choiceBtn(String(d), labels[d - 1], days === d)).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// --- Card 6: Kindy CCS (conditional: kindyCount > 0 AND PR) ---
+function cardKindyCcs() {
+  const ccs       = DATA.ccs;
+  const knownRate = state.kindyDailyRate !== null;
+  const knownInc  = state.familyIncome   !== null;
+  return `
+    ${msg(`Ако ми кажеш каква е дневната такса на градината и колко изкарвате заедно с партньора ти, мога да изчисля точно колко ще платите след субсидията (CCS).<br><br>Ако предпочиташ да пропуснеш — ще ти покажа ориентировъчен диапазон.<br><br><span class="msg-note">${ccs.note_session_hours}</span>`)}\
+    <div class="card-inputs">
+      <p class="input-label">Дневна такса на детската градина</p>
+      <div class="choice-group--inline">
+        ${choiceBtn('rate_default', `Не знам — използвай $${ccs.daily_rate_default}/ден`, !knownRate)}
+        ${choiceBtn('rate_custom',  'Въведи точната такса',                                  knownRate)}
+      </div>
+      <div id="rate-input-row" class="input-row${knownRate ? '' : ' hidden'}">
+        <input type="number" id="daily-rate-input" class="amount-input"
+          placeholder="${ccs.daily_rate_default}"
+          value="${knownRate ? state.kindyDailyRate : ''}"
+          min="50" max="400" step="1">
+        <span class="amount-suffix">AUD / ден</span>
+      </div>
+
+      <p class="input-label" style="margin-top:16px">Общ семеен доход (брутен, годишно)</p>
+      <div class="choice-group--inline">
+        ${choiceBtn('income_skip',  'Пропусни — покажи диапазон', !knownInc)}
+        ${choiceBtn('income_enter', 'Въведи дохода',               knownInc)}
+      </div>
+      <div id="income-input-row" class="input-row${knownInc ? '' : ' hidden'}">
+        <input type="number" id="family-income-input" class="amount-input"
+          placeholder="Например: 130000"
+          value="${knownInc ? state.familyIncome : ''}"
+          min="0" step="1000">
+        <span class="amount-suffix">AUD / год.</span>
+      </div>
+
+      <button class="primary-btn" id="ccs-confirm">Продължи →</button>
+    </div>
+  `;
+}
+
+// --- Card 7: Partner English (conditional) ---
 function cardPartnerEnglish() {
   const si = DATA.visa.second_instalment;
   return `
-    ${msg(`Важен въпрос за партньорът ти: има ли валиден резултат от езиков изпит (IELTS или PTE)?<br><br>Ако не — правителството изисква задължителна втора вноска от <strong>$${si.amount.toLocaleString()} AUD</strong> към визата.`)}\
+    ${msg(`Важен въпрос за партньора ти: има ли валиден резултат от езиков изпит (IELTS или PTE)?<br><br>Ако не — правителството изисква задължителна втора вноска от <strong>$${si.amount.toLocaleString()} AUD</strong> към визата.`)}\
     <div class="card-inputs">
       <div class="choice-group--inline">
         ${choiceBtn('yes', 'Да, има / ще се яви', state.partnerEnglish === true)}
@@ -280,7 +347,7 @@ function cardPartnerEnglish() {
   `;
 }
 
-// --- Card 6: Skills assessment (conditional: PR only) ---
+// --- Card 8: Skills assessment (conditional: PR only) ---
 function cardSkillsAssessment() {
   const sa    = DATA.predeparture.skills_assessment;
   const link  = DATA.meta.source_links[sa.source_key];
@@ -304,12 +371,12 @@ function cardSkillsAssessment() {
   `;
 }
 
-// --- Card 7: Flights input ---
+// --- Card 9: Flights input ---
 function cardFlightsInput() {
-  const f    = DATA.arrival.flights;
-  const n    = getFamilySize();
-  const fMin = f.per_person_min * n;
-  const fMax = f.per_person_max * n;
+  const f     = DATA.arrival.flights;
+  const n     = getFamilySize();
+  const fMin  = f.per_person_min * n;
+  const fMax  = f.per_person_max * n;
   const pWord = n === 1 ? 'човек' : 'души';
   const known = state.flightsCost !== null;
   return `
@@ -331,9 +398,8 @@ function cardFlightsInput() {
   `;
 }
 
-// --- Card 8: Transport (+ vehicle cost if car) ---
+// --- Card 10: Transport ---
 function cardTransport() {
-  const t     = DATA.monthly.transport;
   const v     = DATA.arrival.vehicle;
   const isCar = state.transport === 'car';
   const known = state.vehicleCost !== null;
@@ -341,7 +407,7 @@ function cardTransport() {
     ${msg('Пърт е голям и разпръснат град. Общественият транспорт покрива добре центъра, но не стига до всички квартали.<br><br>Планираш ли да купиш кола, или ще разчиташ на автобуси и влакове?')}\
     <div class="card-inputs">
       <div class="choice-group--inline">
-        ${choiceBtn('car',        'Купувам кола', state.transport === 'car')}
+        ${choiceBtn('car',        'Купувам кола',        state.transport === 'car')}
         ${choiceBtn('transperth', 'Обществен транспорт', state.transport === 'transperth')}
       </div>
       ${isCar ? `
@@ -363,14 +429,14 @@ function cardTransport() {
   `;
 }
 
-// --- Card 9: Staying with family ---
+// --- Card 11: Staying with family ---
 function cardStayingWithFamily() {
   return `
     ${msg('Как планираш първите седмици в Пърт след пристигането?')}\
     <div class="card-inputs">
       <div class="choice-group--inline">
-        ${choiceBtn('temp',   'Наемам временно жилище',      state.stayingWithFamily === false)}
-        ${choiceBtn('family', 'При приятели или семейство',  state.stayingWithFamily === true)}
+        ${choiceBtn('temp',   'Наемам временно жилище',     state.stayingWithFamily === false)}
+        ${choiceBtn('family', 'При приятели или семейство', state.stayingWithFamily === true)}
       </div>
       ${state.stayingWithFamily === true
         ? `<div class="info-note">Страхотно — ще махнем разходите за временно жилище. Депозитът и авансовият наем за постоянния ти дом са все още включени в резюмето.</div>
@@ -380,7 +446,7 @@ function cardStayingWithFamily() {
   `;
 }
 
-// --- Card 10: Property type ---
+// --- Card 12: Property type ---
 function cardPropertyType() {
   return `
     ${msg('Какъв тип жилище търсиш?')}\
@@ -394,20 +460,20 @@ function cardPropertyType() {
   `;
 }
 
-// --- Card 11: Location ---
+// --- Card 13: Location ---
 function cardLocation() {
   return `
     ${msg(`Последен въпрос! Как си представяш живота в Пърт?<br><br><span class="msg-note">${DATA.housing.city_premium_note_bg}</span>`)}\
     <div class="card-inputs">
       <div class="choice-group--inline">
-        ${choiceBtn('suburbs', 'Предградия',              state.location === 'suburbs')}
-        ${choiceBtn('city',    'Център / Крайбрежие',     state.location === 'city')}
+        ${choiceBtn('suburbs', 'Предградия',          state.location === 'suburbs')}
+        ${choiceBtn('city',    'Център / Крайбрежие', state.location === 'city')}
       </div>
     </div>
   `;
 }
 
-// --- Card 12: Summary trigger ---
+// --- Card 14: Summary trigger ---
 function cardSummaryTrigger() {
   return `
     ${msg('Перфектно — имам всичко, което ми трябва. Готов ли си да видиш пълното резюме на разходите?')}\
@@ -426,6 +492,8 @@ function bindCardEvents(key, el) {
     disclaimer:         bindDisclaimer,
     visa_type:          bindVisaType,
     household:          bindHousehold,
+    kindy_days:         bindKindyDays,
+    kindy_ccs:          bindKindyCcs,
     partner_english:    bindPartnerEnglish,
     skills_assessment:  bindSkillsAssessment,
     flights_input:      bindFlightsInput,
@@ -451,14 +519,12 @@ function bindExchangeRate(el) {
     eurBtn.classList.remove('choice-btn--selected');
     eurRow.classList.add('hidden');
   });
-
   eurBtn.addEventListener('click', () => {
     eurBtn.classList.add('choice-btn--selected');
     audBtn.classList.remove('choice-btn--selected');
     eurRow.classList.remove('hidden');
     input.focus();
   });
-
   confirm.addEventListener('click', () => {
     if (!eurRow.classList.contains('hidden')) {
       const val = parseFloat(input.value);
@@ -509,7 +575,6 @@ function bindHousehold(el) {
         track('household/couple');
         goForward(getNextCard('household'));
       } else {
-        // family — show counters; ensure at least one child as default
         state.adultCount = 2;
         if (state.kindyCount + state.schoolCount < 1) state.schoolCount = 1;
         const cur = document.getElementById('card-current');
@@ -519,10 +584,13 @@ function bindHousehold(el) {
     });
   });
 
-  // Kindy counter
   const kindyMinus   = el.querySelector('#kindy-minus');
   const kindyPlus    = el.querySelector('#kindy-plus');
   const kindyDisplay = el.querySelector('#kindy-count');
+  const schoolMinus  = el.querySelector('#school-minus');
+  const schoolPlus   = el.querySelector('#school-plus');
+  const schoolDisplay= el.querySelector('#school-count');
+  const confirm      = el.querySelector('#household-confirm');
 
   if (kindyMinus) kindyMinus.addEventListener('click', () => {
     if (state.kindyCount > 0) { state.kindyCount--; kindyDisplay.textContent = state.kindyCount; }
@@ -530,26 +598,91 @@ function bindHousehold(el) {
   if (kindyPlus) kindyPlus.addEventListener('click', () => {
     if (state.kindyCount < 8) { state.kindyCount++; kindyDisplay.textContent = state.kindyCount; }
   });
-
-  // School counter
-  const schoolMinus   = el.querySelector('#school-minus');
-  const schoolPlus    = el.querySelector('#school-plus');
-  const schoolDisplay = el.querySelector('#school-count');
-
   if (schoolMinus) schoolMinus.addEventListener('click', () => {
     if (state.schoolCount > 0) { state.schoolCount--; schoolDisplay.textContent = state.schoolCount; }
   });
   if (schoolPlus) schoolPlus.addEventListener('click', () => {
     if (state.schoolCount < 8) { state.schoolCount++; schoolDisplay.textContent = state.schoolCount; }
   });
-
-  const confirm = el.querySelector('#household-confirm');
   if (confirm) confirm.addEventListener('click', () => {
     const total = state.kindyCount + state.schoolCount;
     if (total < 1) { showError(el, 'Добави поне едно дете.'); return; }
     state.childCount = total;
     track('household/family_kindy_' + state.kindyCount + '_school_' + state.schoolCount);
     goForward(getNextCard('household'));
+  });
+}
+
+function bindKindyDays(el) {
+  el.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.kindyDaysPerWeek = parseInt(btn.dataset.value, 10);
+      track('kindy_days/' + state.kindyDaysPerWeek);
+      goForward(getNextCard('kindy_days'));
+    });
+  });
+}
+
+function bindKindyCcs(el) {
+  const rateDefaultBtn = el.querySelector('[data-value="rate_default"]');
+  const rateCustomBtn  = el.querySelector('[data-value="rate_custom"]');
+  const rateRow        = el.querySelector('#rate-input-row');
+  const rateInput      = el.querySelector('#daily-rate-input');
+  const incomeSkipBtn  = el.querySelector('[data-value="income_skip"]');
+  const incomeEnterBtn = el.querySelector('[data-value="income_enter"]');
+  const incomeRow      = el.querySelector('#income-input-row');
+  const incomeInput    = el.querySelector('#family-income-input');
+  const confirm        = el.querySelector('#ccs-confirm');
+
+  rateDefaultBtn.addEventListener('click', () => {
+    state.kindyDailyRate = null;
+    rateDefaultBtn.classList.add('choice-btn--selected');
+    rateCustomBtn.classList.remove('choice-btn--selected');
+    rateRow.classList.add('hidden');
+  });
+  rateCustomBtn.addEventListener('click', () => {
+    rateCustomBtn.classList.add('choice-btn--selected');
+    rateDefaultBtn.classList.remove('choice-btn--selected');
+    rateRow.classList.remove('hidden');
+    rateInput.focus();
+  });
+  incomeSkipBtn.addEventListener('click', () => {
+    state.familyIncome = null;
+    incomeSkipBtn.classList.add('choice-btn--selected');
+    incomeEnterBtn.classList.remove('choice-btn--selected');
+    incomeRow.classList.add('hidden');
+  });
+  incomeEnterBtn.addEventListener('click', () => {
+    incomeEnterBtn.classList.add('choice-btn--selected');
+    incomeSkipBtn.classList.remove('choice-btn--selected');
+    incomeRow.classList.remove('hidden');
+    incomeInput.focus();
+  });
+
+  confirm.addEventListener('click', () => {
+    if (!rateRow.classList.contains('hidden')) {
+      const val = parseFloat(rateInput.value);
+      if (isNaN(val) || val < 50 || val > 400) {
+        showError(el, 'Моля въведи валидна дневна такса (между $50 и $400).');
+        return;
+      }
+      state.kindyDailyRate = val;
+    } else {
+      state.kindyDailyRate = null;
+    }
+    if (!incomeRow.classList.contains('hidden')) {
+      const val = parseFloat(incomeInput.value);
+      if (isNaN(val) || val < 0) {
+        showError(el, 'Моля въведи валиден годишен доход.');
+        return;
+      }
+      state.familyIncome = val;
+    } else {
+      state.familyIncome = null;
+    }
+    track('kindy_ccs/rate_' + (state.kindyDailyRate ? 'custom' : 'default') +
+          '_income_' + (state.familyIncome !== null ? 'entered' : 'skipped'));
+    goForward(getNextCard('kindy_ccs'));
   });
 }
 
@@ -568,9 +701,7 @@ function bindPartnerEnglish(el) {
     });
   });
   const confirm = el.querySelector('#partner-english-confirm');
-  if (confirm) confirm.addEventListener('click', () => {
-    goForward(getNextCard('partner_english'));
-  });
+  if (confirm) confirm.addEventListener('click', () => goForward(getNextCard('partner_english')));
 }
 
 function bindSkillsAssessment(el) {
@@ -586,14 +717,12 @@ function bindSkillsAssessment(el) {
     customBtn.classList.remove('choice-btn--selected');
     inputRow.classList.add('hidden');
   });
-
   customBtn.addEventListener('click', () => {
     customBtn.classList.add('choice-btn--selected');
     rangeBtn.classList.remove('choice-btn--selected');
     inputRow.classList.remove('hidden');
     input.focus();
   });
-
   confirm.addEventListener('click', () => {
     if (!inputRow.classList.contains('hidden')) {
       const val = parseFloat(input.value);
@@ -621,14 +750,12 @@ function bindFlightsInput(el) {
     customBtn.classList.remove('choice-btn--selected');
     inputRow.classList.add('hidden');
   });
-
   customBtn.addEventListener('click', () => {
     customBtn.classList.add('choice-btn--selected');
     rangeBtn.classList.remove('choice-btn--selected');
     inputRow.classList.remove('hidden');
     input.focus();
   });
-
   confirm.addEventListener('click', () => {
     if (!inputRow.classList.contains('hidden')) {
       const val = parseFloat(input.value);
@@ -647,10 +774,8 @@ function bindTransport(el) {
   el.querySelectorAll('.choice-group--inline .choice-btn').forEach(btn => {
     if (btn.dataset.value === 'car' || btn.dataset.value === 'transperth') {
       btn.addEventListener('click', () => {
-        const val = btn.dataset.value;
-        if (val === 'transperth') {
-          state.transport = 'transperth';
-          state.vehicleCost = null;
+        if (btn.dataset.value === 'transperth') {
+          state.transport = 'transperth'; state.vehicleCost = null;
           track('transport/transperth');
           goForward(getNextCard('transport'));
         } else {
@@ -666,47 +791,40 @@ function bindTransport(el) {
       btn.addEventListener('click', () => {
         state.vehicleCost = null;
         btn.classList.add('choice-btn--selected');
-        const customBtn = el.querySelector('[data-value="custom"]');
-        if (customBtn) customBtn.classList.remove('choice-btn--selected');
-        const row = el.querySelector('#vehicle-input-row');
-        if (row) row.classList.add('hidden');
+        el.querySelector('[data-value="custom"]')?.classList.remove('choice-btn--selected');
+        el.querySelector('#vehicle-input-row')?.classList.add('hidden');
       });
     }
     if (btn.dataset.value === 'custom') {
       btn.addEventListener('click', () => {
         btn.classList.add('choice-btn--selected');
-        const defBtn = el.querySelector('[data-value="default"]');
-        if (defBtn) defBtn.classList.remove('choice-btn--selected');
+        el.querySelector('[data-value="default"]')?.classList.remove('choice-btn--selected');
         const row = el.querySelector('#vehicle-input-row');
         if (row) { row.classList.remove('hidden'); row.querySelector('input').focus(); }
       });
     }
   });
-
   const confirm = el.querySelector('#transport-confirm');
-  if (confirm) {
-    confirm.addEventListener('click', () => {
-      const row   = el.querySelector('#vehicle-input-row');
-      const input = el.querySelector('#vehicle-cost-input');
-      if (row && !row.classList.contains('hidden') && input) {
-        const val = parseFloat(input.value);
-        if (isNaN(val) || val < 1000) { showError(el, 'Моля въведи валидна сума'); return; }
-        state.vehicleCost = val;
-        track('vehicle/custom_' + Math.round(val));
-      } else {
-        state.vehicleCost = null;
-        track('vehicle/default');
-      }
-      goForward(getNextCard('transport'));
-    });
-  }
+  if (confirm) confirm.addEventListener('click', () => {
+    const row   = el.querySelector('#vehicle-input-row');
+    const input = el.querySelector('#vehicle-cost-input');
+    if (row && !row.classList.contains('hidden') && input) {
+      const val = parseFloat(input.value);
+      if (isNaN(val) || val < 1000) { showError(el, 'Моля въведи валидна сума'); return; }
+      state.vehicleCost = val;
+      track('vehicle/custom_' + Math.round(val));
+    } else {
+      state.vehicleCost = null;
+      track('vehicle/default');
+    }
+    goForward(getNextCard('transport'));
+  });
 }
 
 function bindStayingWithFamily(el) {
   el.querySelectorAll('.choice-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const val = btn.dataset.value;
-      if (val === 'temp') {
+      if (btn.dataset.value === 'temp') {
         state.stayingWithFamily = false;
         track('staying/temp_housing');
         goForward(getNextCard('staying_with_family'));
@@ -719,8 +837,8 @@ function bindStayingWithFamily(el) {
       }
     });
   });
-  const confirm = el.querySelector('#staying-confirm');
-  if (confirm) confirm.addEventListener('click', () => goForward(getNextCard('staying_with_family')));
+  el.querySelector('#staying-confirm')?.addEventListener('click', () =>
+    goForward(getNextCard('staying_with_family')));
 }
 
 function bindPropertyType(el) {
@@ -751,7 +869,58 @@ function bindSummaryTrigger(el) {
 }
 
 // ============================================================
-// 7. CALCULATIONS (with low/high range support)
+// 7. CCS ENGINE (Child Care Subsidy, 2026-2027 FY)
+// All thresholds loaded from DATA.ccs for easy annual update.
+// ============================================================
+
+function ccsStandardRate(income) {
+  const c = DATA.ccs;
+  if (income <= c.income_threshold_90)   return 0.90;
+  if (income >= c.income_threshold_zero) return 0.00;
+  return 0.90 - ((income - c.income_threshold_90) / 5000) * 0.01;
+}
+
+function ccsHigherRate(income) {
+  const c = DATA.ccs;
+  // Above cutoff: multi-child bonus is gone, matches standard rate
+  if (income >= c.income_higher_rate_cutoff) return ccsStandardRate(income);
+  // Bracket A
+  if (income <= c.income_bracket_a_max) return 0.95;
+  // Bracket B
+  if (income <= c.income_bracket_b_max)
+    return 0.95 - ((income - c.income_bracket_a_max) / 3000) * 0.01;
+  // Bracket C
+  if (income <= c.income_bracket_c_max) return 0.80;
+  // Bracket D
+  if (income <= c.income_bracket_d_max)
+    return 0.80 - ((income - c.income_bracket_c_max) / 3000) * 0.01;
+  // Bracket E: 360,727 < income < 370,727
+  return 0.50;
+}
+
+// Returns { total (monthly AUD), perChildLines (array of display strings) }
+function calcKindyCcs(dailyRate, daysPerWeek, income) {
+  const c              = DATA.ccs;
+  const actualHourly   = dailyRate / c.session_hours_default;
+  const subsidisedHrly = Math.min(actualHourly, c.hourly_rate_cap);
+  let total = 0;
+  const perChildLines = [];
+
+  for (let i = 0; i < state.kindyCount; i++) {
+    const rate       = i === 0 ? ccsStandardRate(income) : ccsHigherRate(income);
+    const dailySub   = subsidisedHrly * c.session_hours_default * rate;
+    const dailyOOP   = dailyRate - dailySub;
+    const monthlyOOP = Math.round(dailyOOP * daysPerWeek * 4.33);
+    total += monthlyOOP;
+    perChildLines.push(
+      `Дете ${i + 1}: ${(rate * 100).toFixed(1)}% субсидия → ~$${Math.round(dailyOOP)}/ден → ~${fmtAUD(monthlyOOP)}/мес.`
+    );
+  }
+  return { total, perChildLines };
+}
+
+// ============================================================
+// 8. CALCULATIONS
 // ============================================================
 
 function calcPredeparture() {
@@ -771,50 +940,43 @@ function calcPredeparture() {
     lines.push({ label_bg, excluded: true, ...opts });
   }
 
-  // Visa fees
   addFixed('Визова такса (основен кандидат)', visa.fees.primary, { source_key: 'visa_fees' });
 
   if (state.householdType === 'couple' || state.householdType === 'family') {
     const partnerFee = (state.visaKey === 'pr_189' || state.visaKey === 'pr_190')
-      ? visa.fees.extra_adult
-      : visa.fees.primary;
+      ? visa.fees.extra_adult : visa.fees.primary;
     addFixed('Визова такса (партньор)', partnerFee, { source_key: 'visa_fees' });
   }
 
   if (state.householdType === 'family' && state.childCount > 0) {
     const cWord = state.childCount === 1 ? 'дете' : 'деца';
-    addFixed(`Визова такса (${state.childCount} ${cWord})`, visa.fees.child * state.childCount, { source_key: 'visa_fees' });
+    addFixed(`Визова такса (${state.childCount} ${cWord})`,
+      visa.fees.child * state.childCount, { source_key: 'visa_fees' });
   }
 
-  // Second instalment (PR + partner + no English)
   if ((state.visaKey === 'pr_189' || state.visaKey === 'pr_190') &&
       (state.householdType === 'couple' || state.householdType === 'family') &&
       state.partnerEnglish === false) {
     const si = DATA.visa.second_instalment;
-    addFixed('Втора вноска (английски)', si.amount, { note_bg: si.note_bg, source_key: 'visa_fees' });
+    addFixed(si.label_bg, si.amount, { note_bg: si.note_bg, source_key: 'visa_fees' });
   }
 
-  // English test (PR only)
   if (state.visaKey === 'pr_189' || state.visaKey === 'pr_190') {
     const et = DATA.predeparture.english_test;
     addFixed('Езиков изпит (IELTS / PTE)', et.amount, { note_bg: et.note_bg, source_key: 'visa_fees' });
-  }
-
-  // Skills assessment (PR only)
-  if (state.visaKey === 'pr_189' || state.visaKey === 'pr_190') {
     const sa = DATA.predeparture.skills_assessment;
     if (state.skillsAssessmentCost !== null) {
-      addFixed('Оценка на уменията', state.skillsAssessmentCost, { note_bg: sa.note_bg, source_key: 'skills_assessment' });
+      addFixed('Оценка на уменията', state.skillsAssessmentCost,
+        { note_bg: sa.note_bg, source_key: 'skills_assessment' });
     } else {
-      addRange('Оценка на уменията', sa.range_min, sa.range_max, { note_bg: sa.note_bg, source_key: 'skills_assessment' });
+      addRange('Оценка на уменията', sa.range_min, sa.range_max,
+        { note_bg: sa.note_bg, source_key: 'skills_assessment' });
     }
   }
 
-  // WA nomination — info only, not in total
   if (state.visaKey === 'pr_190') {
     addInfo('Номинация от Западна Австралия ($200)', {
-      note_bg: visa.nomination_note_bg,
-      source_key: 'wa_nomination'
+      note_bg: visa.nomination_note_bg, source_key: 'wa_nomination'
     });
   }
 
@@ -824,7 +986,8 @@ function calcPredeparture() {
 function calcArrival() {
   const lines = [];
   let lo = 0, hi = 0;
-  const n = getFamilySize();
+  const n    = getFamilySize();
+  const isPR = state.visaKey === 'pr_189' || state.visaKey === 'pr_190';
 
   function addFixed(label_bg, amount, opts = {}) {
     lines.push({ label_bg, amount_min: amount, amount_max: amount, ...opts });
@@ -835,42 +998,48 @@ function calcArrival() {
     lo += min; hi += max;
   }
 
-  // Flights
   const f = DATA.arrival.flights;
   if (state.flightsCost !== null) {
-    addFixed(`Самолетни билети (въведена сума)`, state.flightsCost, { note_bg: f.note_bg });
+    addFixed('Самолетни билети (въведена сума)', state.flightsCost, { note_bg: f.note_bg });
   } else {
     const pWord = n === 1 ? 'човек' : 'души';
-    addRange(`Самолетни билети (${n} ${pWord})`, f.per_person_min * n, f.per_person_max * n, { note_bg: f.note_bg });
+    addRange(`Самолетни билети (${n} ${pWord})`,
+      f.per_person_min * n, f.per_person_max * n, { note_bg: f.note_bg });
   }
 
-  // Temp accommodation
   if (!state.stayingWithFamily) {
     const tier  = DATA.arrival.temp_accommodation.tiers.find(t => n <= t.max_persons);
     const weeks = DATA.arrival.temp_accommodation.default_weeks;
-    addFixed(`Временно жилище (${weeks} седмици)`, tier.weekly * weeks, { note_bg: DATA.arrival.temp_accommodation.note_bg });
+    addFixed(`Временно жилище (${weeks} седмици)`, tier.weekly * weeks,
+      { note_bg: DATA.arrival.temp_accommodation.note_bg });
   }
 
-  // Bond + advance
   const wkRent = getWeeklyRent();
-  addFixed(`Депозит (${DATA.housing.bond_weeks} седмици)`, wkRent * DATA.housing.bond_weeks, { source_key: 'reiwa' });
-  addFixed(`Авансов наем (${DATA.housing.advance_weeks} седмици)`, wkRent * DATA.housing.advance_weeks, { source_key: 'reiwa' });
+  addFixed(`Депозит (${DATA.housing.bond_weeks} седмици)`,
+    wkRent * DATA.housing.bond_weeks, { source_key: 'reiwa' });
+  addFixed(`Авансов наем (${DATA.housing.advance_weeks} седмици)`,
+    wkRent * DATA.housing.advance_weeks, { source_key: 'reiwa' });
 
-  // Vehicle
   if (state.transport === 'car') {
     const v    = DATA.arrival.vehicle;
     const cost = state.vehicleCost !== null ? state.vehicleCost : v.default_cost;
     const duty = calcStampDuty(cost);
     addFixed('Автомобил', cost, { note_bg: v.note_bg_duty });
-    addFixed('Гербова такса (stamp duty)', duty, { source_key: 'revenue_wa_duty' });
-    addFixed('Шофьорска книжка + изпити', v.licence_and_tests, { note_bg: v.note_bg_licence, source_key: 'dot_licence' });
+    addFixed('Данък за прехвърляне на автомобила', duty, { source_key: 'revenue_wa_duty' });
+    // Licence fork: PR must test ($382); 482 drives on BG licence at $0
+    if (isPR) {
+      addFixed('Шофьорска книжка WA + изпити', v.licence_and_tests,
+        { note_bg: v.note_bg_licence_pr, source_key: 'dot_licence' });
+    } else {
+      addFixed('Шофьорска книжка WA', 0, { note_bg: v.note_bg_licence_482 });
+    }
   }
 
-  // School registration one-off (482 + school-age children)
-  // BUG-001 guard: uses schoolCount (5-18), not childCount
+  // School registration (482 + school-age children only — not kindy-only families)
   if (state.visaKey === 'visa_482' && state.schoolCount > 0) {
     const s = DATA.monthly.school;
-    addFixed('Еднократна регистрация в училище', s.registration_one_off, { note_bg: s.note_bg });
+    addFixed('Еднократна регистрация в училище', s.registration_one_off,
+      { note_bg: s.note_bg });
   }
 
   return { lo, hi, lines };
@@ -879,7 +1048,8 @@ function calcArrival() {
 function calcMonthly() {
   const lines = [];
   let lo = 0, hi = 0;
-  const n = getFamilySize();
+  const n    = getFamilySize();
+  const isPR = state.visaKey === 'pr_189' || state.visaKey === 'pr_190';
 
   function addFixed(label_bg, amount, opts = {}) {
     lines.push({ label_bg, amount_min: amount, amount_max: amount, ...opts });
@@ -890,34 +1060,27 @@ function calcMonthly() {
     lo += min; hi += max;
   }
 
-  // Rent
   addFixed('Наем', Math.round(getWeeklyRent() * 4.33), { source_key: 'reiwa' });
-
-  // Groceries
   addFixed('Хранителни стоки', calcGroceries(n), { note_bg: DATA.monthly.groceries.note_bg });
-
-  // Utilities
   addFixed('Сметки (ток, вода, интернет)',
     DATA.monthly.utilities.base + Math.max(0, n - 1) * DATA.monthly.utilities.per_extra_person,
     { note_bg: DATA.monthly.utilities.note_bg });
 
-  // Phone
-  const adults = state.householdType === 'solo' ? 1 : 2;
-  addFixed(`Телефонни планове (${adults} ${adults === 1 ? 'план' : 'плана'})`,
-    DATA.monthly.phone.per_adult * adults,
-    { note_bg: DATA.monthly.phone.note_bg });
+  const adults  = state.householdType === 'solo' ? 1 : 2;
+  const planWrd = adults === 1 ? 'план' : 'плана';
+  addFixed(`Телефонни планове (${adults} ${planWrd})`,
+    DATA.monthly.phone.per_adult * adults, { note_bg: DATA.monthly.phone.note_bg });
 
-  // Transport
   const t = DATA.monthly.transport;
   if (state.transport === 'car') {
-    addFixed('Разходи за кола (гориво, застраховка)', t.car_running_monthly, { note_bg: t.note_bg_car });
+    addFixed('Разходи за кола (гориво, застраховка)', t.car_running_monthly,
+      { note_bg: t.note_bg_car });
   } else {
-    const cardWord = adults === 1 ? 'карта' : 'карти';
-    addFixed(`Transperth (${adults} ${cardWord})`, t.transperth_adult_monthly * adults,
+    const cardWrd = adults === 1 ? 'карта' : 'карти';
+    addFixed(`Transperth (${adults} ${cardWrd})`, t.transperth_adult_monthly * adults,
       { note_bg: t.note_bg_transperth, source_key: 'transperth' });
   }
 
-  // Dining out
   const d = DATA.monthly.dining;
   if (state.householdType === 'solo') {
     addRange('Хранене навън и кафе', d.solo_min, d.solo_max, { note_bg: d.note_bg });
@@ -927,34 +1090,43 @@ function calcMonthly() {
     addRange('Хранене навън и кафе', d.family_min, d.family_max, { note_bg: d.note_bg });
   }
 
-  // Kids activities — all children (kindy + school)
   if (state.householdType === 'family' && state.childCount > 0) {
     const ka    = DATA.monthly.kids_activities;
     const cWord = state.childCount === 1 ? 'дете' : 'деца';
     addRange(`Занимания за деца (${state.childCount} ${cWord})`,
-      ka.per_child_min * state.childCount,
-      ka.per_child_max * state.childCount,
+      ka.per_child_min * state.childCount, ka.per_child_max * state.childCount,
       { note_bg: ka.note_bg });
   }
 
-  // Kindy childcare — only when kindyCount > 0
+  // Kindy childcare — dynamic: daily rate × days × 4.33
   if (state.kindyCount > 0) {
-    const k     = DATA.monthly.kindy;
-    const isPR  = state.visaKey === 'pr_189' || state.visaKey === 'pr_190';
-    const kWord = state.kindyCount === 1 ? 'дете' : 'деца';
-    if (isPR) {
-      addRange(
-        `Детска грижа (${state.kindyCount} ${kWord})`,
-        k.perth_aud_net_pr_min * state.kindyCount,
-        k.perth_aud_net_pr_max * state.kindyCount,
-        { note_bg: k.note_bg_pr, source_key: 'ccs_calculator' }
-      );
+    const k        = DATA.monthly.kindy;
+    const days     = state.kindyDaysPerWeek;
+    const dayRate  = state.kindyDailyRate !== null ? state.kindyDailyRate : DATA.ccs.daily_rate_default;
+    const grossPer = Math.round(dayRate * days * 4.33);
+    const kWord    = state.kindyCount === 1 ? 'дете' : 'деца';
+    const daysWrd  = days === 1 ? 'ден' : 'дни';
+
+    if (!isPR) {
+      // 482: no CCS, pay full gross
+      const note = `${k.note_bg_482} $${dayRate}/ден × ${days} ${daysWrd} × 4.33 седм. = ~${fmtAUD(grossPer)}/мес. на дете.`;
+      addFixed(`Детска грижа (${state.kindyCount} ${kWord})`,
+        grossPer * state.kindyCount, { note_bg: note });
+    } else if (state.familyIncome !== null) {
+      // PR + income entered: exact CCS calculation
+      const ccs     = calcKindyCcs(dayRate, days, state.familyIncome);
+      const noteStr = ccs.perChildLines.join(' · ') +
+        ` Брутна цена: ~${fmtAUD(grossPer)}/мес. на дете ($${dayRate}/ден × ${days} ${daysWrd}).`;
+      addFixed(`Детска грижа (${state.kindyCount} ${kWord})`,
+        ccs.total, { note_bg: noteStr, source_key: 'ccs_calculator' });
     } else {
-      addFixed(
-        `Детска грижа (${state.kindyCount} ${kWord})`,
-        k.perth_aud_gross * state.kindyCount,
-        { note_bg: k.note_bg_482 }
-      );
+      // PR + income skipped: scaled range
+      const daysRatio = days / 5;
+      const rangeMin  = Math.round(k.perth_aud_net_pr_min_5days * daysRatio) * state.kindyCount;
+      const rangeMax  = Math.round(k.perth_aud_net_pr_max_5days * daysRatio) * state.kindyCount;
+      const noteStr   = `${k.note_bg_pr_range} Брутна цена: ~${fmtAUD(grossPer)}/мес. на дете ($${dayRate}/ден × ${days} ${daysWrd}). Въведи семейния доход за точна сметка.`;
+      addRange(`Детска грижа (${state.kindyCount} ${kWord})`,
+        rangeMin, rangeMax, { note_bg: noteStr, source_key: 'ccs_calculator' });
     }
   }
 
@@ -962,23 +1134,23 @@ function calcMonthly() {
   if (state.visaKey === 'visa_482') {
     const ovhc   = DATA.monthly.ovhc;
     const amount = state.householdType === 'solo' ? ovhc.single_monthly : ovhc.family_monthly;
-    addFixed('OVHC здравна застраховка', amount, { note_bg: ovhc.note_bg, source_key: 'ovhc' });
+    addFixed('OVHC здравна застраховка', amount,
+      { note_bg: ovhc.note_bg, source_key: 'ovhc' });
   }
 
   // School (482 + school-age children)
-  // BUG-001 guard-rail: fee is per family, not per child.
-  // Uses schoolCount (5-18 yrs only), NOT childCount.
+  // Guard-rail: flat $4,000/year per family. Kindergarten-only families (schoolCount === 0) are exempt.
   if (state.visaKey === 'visa_482' && state.schoolCount > 0) {
-    const s   = DATA.monthly.school;
-    const fee = s.first_child_monthly + Math.max(0, state.schoolCount - 1) * s.subsequent_child_monthly;
-    addFixed('Такса обучение (държавно училище)', fee, { note_bg: s.note_bg });
+    const s = DATA.monthly.school;
+    addFixed('Такса обучение (държавно училище)', s.family_flat_rate_monthly,
+      { note_bg: s.note_bg });
   }
 
   return { lo, hi, lines };
 }
 
 // ============================================================
-// 8. CALC HELPERS
+// 9. CALC HELPERS
 // ============================================================
 function getFamilySize() {
   if (state.householdType === 'solo')   return 1;
@@ -1007,7 +1179,6 @@ function fmtAUD(n) {
 }
 
 function fmtEUR(n) {
-  // Format with non-breaking space as thousands separator: €7 707
   const str = Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
   return '€\u00A0' + str;
 }
@@ -1031,12 +1202,16 @@ function fmtPhaseTotal(lo, hi) {
 
 function showError(el, message) {
   let err = el.querySelector('.field-error');
-  if (!err) { err = document.createElement('p'); err.className = 'field-error'; el.querySelector('.card-inputs').appendChild(err); }
+  if (!err) {
+    err = document.createElement('p');
+    err.className = 'field-error';
+    el.querySelector('.card-inputs').appendChild(err);
+  }
   err.textContent = message;
 }
 
 // ============================================================
-// 9. SUMMARY SCREEN
+// 10. SUMMARY SCREEN
 // ============================================================
 function showSummary() {
   const predep  = calcPredeparture();
@@ -1075,7 +1250,7 @@ function buildProfileCard() {
 
   function familyLabel() {
     const parts = [];
-    if (state.kindyCount > 0) parts.push(`${state.kindyCount} ${state.kindyCount === 1 ? 'малко дете' : 'малки деца'}`);
+    if (state.kindyCount  > 0) parts.push(`${state.kindyCount} ${state.kindyCount === 1 ? 'малко дете' : 'малки деца'}`);
     if (state.schoolCount > 0) parts.push(`${state.schoolCount} в училище`);
     return `Семейство (${parts.join(', ')})`;
   }
@@ -1089,18 +1264,20 @@ function buildProfileCard() {
   const transportLabel = state.transport === 'car'
     ? `Кола${state.vehicleCost ? ' ($' + state.vehicleCost.toLocaleString() + ')' : ' ($14,000 ориентир)'}`
     : 'Обществен транспорт';
-  const propLabel  = DATA.housing.types[state.propertyType]?.label_bg || '—';
-  const locLabel   = state.location === 'city' ? 'Център / Крайбрежие' : 'Предградия';
-  const stayLabel  = state.stayingWithFamily ? 'При приятели / семейство' : 'Временно жилище';
-  const eurLabel   = state.eurPerAud ? `AUD + EUR (1 AUD = ${state.eurPerAud} EUR)` : 'Само AUD';
+  const propLabel = DATA.housing.types[state.propertyType]?.label_bg || '—';
+  const locLabel  = state.location === 'city' ? 'Център / Крайбрежие' : 'Предградия';
+  const stayLabel = state.stayingWithFamily ? 'При приятели / семейство' : 'Временно жилище';
+  const eurLabel  = state.eurPerAud ? `AUD + EUR (1 AUD = ${state.eurPerAud} EUR)` : 'Само AUD';
 
   const chips = [
-    { label: 'Виза',         value: visaLabel },
-    { label: 'Домакинство',  value: householdMap[state.householdType] || '—' },
-    { label: 'Транспорт',    value: transportLabel },
+    { label: 'Виза',           value: visaLabel },
+    { label: 'Домакинство',    value: householdMap[state.householdType] || '—' },
+    ...(state.kindyCount > 0 ? [{ label: 'Детска градина',
+        value: `${state.kindyCount} ${state.kindyCount === 1 ? 'дете' : 'деца'} · ${state.kindyDaysPerWeek} ${state.kindyDaysPerWeek === 1 ? 'ден' : 'дни'}/седм.` }] : []),
+    { label: 'Транспорт',      value: transportLabel },
     { label: 'При пристигане', value: stayLabel },
-    { label: 'Жилище',       value: `${propLabel} — ${locLabel}` },
-    { label: 'Валута',       value: eurLabel }
+    { label: 'Жилище',         value: `${propLabel} — ${locLabel}` },
+    { label: 'Валута',         value: eurLabel }
   ];
 
   return `
@@ -1122,7 +1299,6 @@ function buildPhaseBlock(title, calc) {
     const srcLink = line.source_key
       ? ` <a href="${DATA.meta.source_links[line.source_key]}" target="_blank" class="source-link">→ Провери</a>`
       : '';
-
     if (line.excluded) {
       return `
         <div class="line line--info">
@@ -1130,7 +1306,6 @@ function buildPhaseBlock(title, calc) {
           <p class="line-note">${line.note_bg || ''}${srcLink}</p>
         </div>`;
     }
-
     return `
       <div class="line">
         <div class="line-head">
@@ -1152,12 +1327,13 @@ function buildPhaseBlock(title, calc) {
 }
 
 // ============================================================
-// 10. INIT + RESET
+// 11. INIT + RESET
 // ============================================================
 function resetApp() {
   Object.assign(state, {
     visaKey: null, householdType: null, adultCount: 1,
     childCount: 0, kindyCount: 0, schoolCount: 0,
+    kindyDaysPerWeek: 5, kindyDailyRate: null, familyIncome: null,
     partnerEnglish: null,
     skillsAssessmentCost: null, flightsCost: null, vehicleCost: null,
     transport: null, stayingWithFamily: null,

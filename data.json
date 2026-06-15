@@ -1,16 +1,16 @@
 {
   "meta": {
-    "version": "0.13",
+    "version": "0.14",
     "currency_anchor_eur_per_aud": 0.61,
     "source_links": {
       "visa_fees":        "https://immi.homeaffairs.gov.au/visas/getting-a-visa/fees-and-charges/current-visa-pricing",
       "skills_assessment":"https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list",
-      "wa_nomination":    "https://migration.wa.gov.au/moving-western-australia/migration-pathways-skilled-visas",
+      "wa_nomination":    "https://www.wa.gov.au/government/document-collections/skilled-migration-wa",
       "reiwa":            "https://reiwa.com.au/the-wa-market/",
-      "ovhc":             "https://www.allianzcare.com.au/en/visas/visitors-visa-ovhc/compare.html",
-      "dot_licence":      "https://www.transport.wa.gov.au/licensing/drivers-licence/get-a-licence/car",
-      "revenue_wa_duty":  "https://www.wa.gov.au/organisation/department-of-treasury-and-finance/vehicle-licence-duty",
-      "transperth":       "https://www.transperth.wa.gov.au/tickets-fares/fares",
+      "ovhc":             "https://www.allianzcare.com.au/en/individuals/overseas-health-cover.html",
+      "dot_licence":      "https://www.transport.wa.gov.au/licensing/get-a-car-licence.asp",
+      "revenue_wa_duty":  "https://www.revenue.wa.gov.au/duties/vehicle-licence-duty",
+      "transperth":       "https://www.transperth.wa.gov.au/Fares-Tickets/Fares",
       "ccs_calculator":   "https://startingblocks.gov.au/child-care-subsidy-calculator"
     }
   },
@@ -49,8 +49,9 @@
       }
     ],
     "second_instalment": {
-      "amount": 4895,
-      "note_bg": "Ако партньорът ти няма валиден резултат от езиков изпит, правителството изисква задължителна втора вноска от $4,895 AUD. Включена е в резюмето."
+      "label_bg": "Втора вноска за виза",
+      "amount": 4885,
+      "note_bg": "Ако партньорът ти няма доказано ниво на функционален английски (IELTS, PTE или еквивалент), правителството изисква втора вноска от $4,885 AUD. Плаща се само при одобрение на визата — преди да я получиш."
     }
   },
 
@@ -100,8 +101,9 @@
         { "max": null,  "rate": 0.065 }
       ],
       "licence_and_tests": 382,
-      "note_bg_duty": "RevenueWA начислява гербова такса върху стойността на автомобила. Изчислена автоматично от цената, която въведе.",
-      "note_bg_licence": "Шофьорската книжка от България не се признава в Западна Австралия. Ще трябва да полагаш теоретичен и практически изпит.",
+      "note_bg_duty": "RevenueWA начислява данък за прехвърляне на автомобила върху стойността, която въведе. Изчислен автоматично.",
+      "note_bg_licence_pr": "От ноември 2025 г. WA премахна директната размяна на чужди книжки. Ще трябва да положиш теоретичен и практически изпит — но е по-лесно, отколкото звучи. Таксата от $382 покрива теоретичния изпит, теста за опасни ситуации и 5-годишната книжка.",
+      "note_bg_licence_482": "Докато си на виза 482, DoT WA те третира като дългосрочен посетител — можеш да шофираш с българската си книжка и официален превод за целия период на визата. Нямаш нужда от местна книжка.",
       "source_key": "revenue_wa_duty",
       "licence_source_key": "dot_licence"
     }
@@ -154,11 +156,11 @@
       "note_bg": "Спорт, плуване, музика, извънкласни занимания. Паркове, плажове и библиотеки са безплатни и се ползват много активно от семействата в Пърт."
     },
     "kindy": {
-      "perth_aud_gross": 1500,
-      "perth_aud_net_pr_min": 600,
-      "perth_aud_net_pr_max": 900,
-      "note_bg_pr": "Дневна грижа (Long Day Care) 3–5 дни седмично. Брутна цена преди субсидия: $1,500/мес. Притежателите на PR имат право на Child Care Subsidy (CCS). При медианен доход (~$130,000/год.) реалният разход е $600–$900/мес. след субсидия.",
-      "note_bg_482": "Дневна грижа (Long Day Care) 3–5 дни седмично. Притежателите на виза 482 нямат достъп до Child Care Subsidy (CCS) — плащате пълната брутна цена. $1,500/мес. на дете.",
+      "perth_aud_gross_5days": 3250,
+      "perth_aud_net_pr_min_5days": 600,
+      "perth_aud_net_pr_max_5days": 900,
+      "note_bg_pr_range": "Ориентировъчен диапазон след CCS субсидия, при медианен семеен доход. Въведи семейния си доход за точна сметка.",
+      "note_bg_482": "Притежателите на виза 482 нямат право на CCS субсидия — плащате пълната цена.",
       "source_key": "ccs_calculator"
     },
     "ovhc": {
@@ -169,12 +171,26 @@
       "source_key": "ovhc"
     },
     "school": {
-      "first_child_monthly": 430,
-      "subsequent_child_monthly": 80,
+      "family_flat_rate_monthly": 333.33,
       "registration_one_off": 285,
       "condition": "visa_482",
-      "guard_rail": "fee is per family not per child - first child $430/mo, each additional school-age child $80/mo",
-      "note_bg": "Задължителна такса за обучение в държавните училища за деца на временни визи. Таксата е на семейство — $430/мес. за първото дете, $80/мес. за всяко следващо. Еднократна регистрация $285."
+      "guard_rail": "Flat $4,000/year per family regardless of number of children. No fee if oldest child is in Kindergarten only (schoolCount === 0). Managed by TIWA.",
+      "note_bg": "В Западна Австралия, децата на виза 482 плащат такса за обучение в държавните училища. Добрата новина: таксата е фиксирана на $4,000 на година за цялото семейство — без значение колко деца имаш. Това е около $333 на месец. Управлява се от TIWA (TAFE International WA). Ако децата ти са само в Подготвителна група (Kindergarten), тази такса не важи."
     }
+  },
+
+  "ccs": {
+    "financial_year": "2026-2027",
+    "session_hours_default": 10,
+    "daily_rate_default": 150,
+    "hourly_rate_cap": 15.19,
+    "income_threshold_90": 88520,
+    "income_threshold_zero": 538520,
+    "income_higher_rate_cutoff": 370727,
+    "income_bracket_a_max": 146437,
+    "income_bracket_b_max": 191437,
+    "income_bracket_c_max": 270727,
+    "income_bracket_d_max": 360727,
+    "note_session_hours": "Сесията е фиксирана на 10 часа — стандарт за Long Day Care в Австралия. Максималната субсидирана ставка е $15.19/час. Ако дневната такса на твоята градина е под $151.90, пълната сума е субсидируема."
   }
 }
