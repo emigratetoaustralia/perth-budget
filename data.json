@@ -5,12 +5,12 @@
     "source_links": {
       "visa_fees":        "https://immi.homeaffairs.gov.au/visas/getting-a-visa/fees-and-charges/current-visa-pricing",
       "skills_assessment":"https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list",
-      "wa_nomination":    "https://www.wa.gov.au/government/document-collections/skilled-migration-wa",
+      "wa_nomination":    "https://migration.wa.gov.au/moving-western-australia/migration-pathways-skilled-visas",
       "reiwa":            "https://reiwa.com.au/the-wa-market/",
-      "ovhc":             "https://www.allianzcare.com.au/en/individuals/overseas-health-cover.html",
-      "dot_licence":      "https://www.transport.wa.gov.au/licensing/get-a-car-licence.asp",
-      "revenue_wa_duty":  "https://www.revenue.wa.gov.au/duties/vehicle-licence-duty",
-      "transperth":       "https://www.transperth.wa.gov.au/Fares-Tickets/Fares",
+      "ovhc":             "https://www.allianzcare.com.au/en/visas/visitors-visa-ovhc/compare.html",
+      "dot_licence":      "https://www.transport.wa.gov.au/licensing/drivers-licence/get-a-licence/car",
+      "revenue_wa_duty":  "https://www.wa.gov.au/organisation/department-of-treasury-and-finance/vehicle-licence-duty",
+      "transperth":       "https://www.transperth.wa.gov.au/tickets-fares/fares",
       "ccs_calculator":   "https://startingblocks.gov.au/child-care-subsidy-calculator",
       "xe_rate":          "https://www.xe.com/currencyconverter/convert/?Amount=1&From=AUD&To=EUR"
     }
@@ -114,7 +114,7 @@
     "bond_weeks": 4,
     "advance_weeks": 2,
     "source_key": "reiwa",
-    "city_premium_note_bg": "Жилищата в крайбрежни и централни квартали (Scarborough, Cottesloe, Fremantle, Subiaco) са средно с около 25% по-скъпи от предградията. Cottesloe е значително над средното.",
+    "city_premium_note_bg": "Жилищата в крайбрежни и централни квартали (Scarborough, Cottesloe, Fremantle, Subiaco) са средно с около 25% по-скъпи от предградията. Cottesloe е значително над средното, но почти няма предлагане. Ще ти е много трудно да намериш жилище под наем.",
     "types": {
       "unit":      { "label_bg": "Апартамент / юнит",  "weekly_suburbs": 680, "weekly_city": 850 },
       "townhouse": { "label_bg": "Таунхаус",            "weekly_suburbs": 720, "weekly_city": 900 },
@@ -149,7 +149,7 @@
       "solo_min": 150,   "solo_max": 350,
       "couple_min": 250, "couple_max": 500,
       "family_min": 300, "family_max": 600,
-      "note_bg": "Хранене навън, кафе и доставки. Пърт има страхотна кафе и ресторантска сцена — лесно е да похарчиш повече от планираното."
+      "note_bg": "Хранене навън, кафе и доставки. Пърт има добри заведения (за местния стандарт) — лесно е да похарчиш повече от планираното."
     },
     "kids_activities": {
       "per_child_min": 100,
