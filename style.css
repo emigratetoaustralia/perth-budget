@@ -467,16 +467,22 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: var(--shadow);
   overflow: hidden;
 }
-.phase:nth-child(1) { border-top: 3px solid var(--ocean); }
-.phase:nth-child(2) { border-top: 3px solid var(--gold); }
-.phase:nth-child(3) { border-top: 3px solid var(--eucalypt); }
+
+/* Class-based phase colors — robust against DOM insertion between phases */
+.phase--predep  { border-top: 3px solid var(--ocean); }
+.phase--arrival { border-top: 3px solid var(--gold); }
+.phase--monthly { border-top: 3px solid var(--eucalypt); }
+
+/* phases--tail: gap between the two phases wrappers.
+   When Lazar block is present its bottom padding provides the gap, so we cancel it. */
+.phases--tail                { margin-top: 16px; }
+.lazar-block + .phases--tail { margin-top: 0; }
 
 .phase-head {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 20px 20px 16px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 20px 14px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -493,8 +499,6 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 1rem;
   font-weight: 700;
   color: var(--ocean);
-  text-align: right;
-  flex-shrink: 0;
   line-height: 1.4;
 }
 
@@ -777,7 +781,14 @@ button { font-family: inherit; cursor: pointer; }
   .summary-title { font-size: 2.25rem; }
   .profile-card { padding: 0 24px; }
   .phases { padding: 0 24px; }
-  .phase-head { padding: 24px 28px 20px; }
+  .phase-head {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 24px 28px 20px;
+  }
+  .phase-total { text-align: right; flex-shrink: 0; }
   .line { padding: 14px 28px; }
   .summary-footer { padding: 24px 24px 0; }
   .lazar-block { padding: 0 24px 20px; }

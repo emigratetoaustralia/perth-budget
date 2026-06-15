@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": "0.15",
+    "version": "0.16",
     "currency_anchor_eur_per_aud": 0.61,
     "source_links": {
       "visa_fees":        "https://immi.homeaffairs.gov.au/visas/getting-a-visa/fees-and-charges/current-visa-pricing",

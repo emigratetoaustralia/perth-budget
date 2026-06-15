@@ -44,11 +44,11 @@ function track(path) {
 // 3b. COMPLEXITY CHECK (for Lazar affiliate block)
 // ============================================================
 function isComplexCase() {
-  // 482 + family (school fees, OVHC, no CCS)
-  if (state.visaKey === 'visa_482' && state.householdType === 'family') return true;
+  // 482 + couple or family (OVHC for all, school fees, no CCS)
+  if (state.visaKey === 'visa_482' && state.householdType !== 'solo') return true;
   // Partner without functional English (second instalment $4,885)
   if (state.partnerEnglish === false) return true;
-  // 482 + any children (single-parent or couple with kids on temp visa)
+  // 482 + any children (single-parent on temp visa)
   if (state.visaKey === 'visa_482' && state.childCount > 0) return true;
   return false;
 }
@@ -64,6 +64,8 @@ async function hashInput(str) {
   const buf  = await crypto.subtle.digest('SHA-256', enc.encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
+
+let sessionAuthenticated = false;
 
 // ============================================================
 // 4. WIZARD ENGINE
@@ -524,6 +526,7 @@ function cardSummaryTrigger() {
   return `
     ${msg('Перфектно — имам всичко, което ми трябва. Искаш ли да видиш пълното резюме на разходите?')}\
     <div class="card-inputs">
+      <div class="info-note">💡 Не затваряй прозореца, докато преглеждаш резюмето — напредъкът не се записва.</div>
       <button class="primary-btn" id="show-summary">Покажи резюмето →</button>
     </div>
   `;
@@ -916,8 +919,13 @@ function bindLocation(el) {
 
 function bindSummaryTrigger(el) {
   el.querySelector('#show-summary').addEventListener('click', () => {
-    track('summary/gate_shown');
-    showPasswordGate();
+    if (sessionAuthenticated) {
+      track('summary/viewed_cached');
+      showSummary();
+    } else {
+      track('summary/gate_shown');
+      showPasswordGate();
+    }
   });
 }
 
@@ -1333,13 +1341,17 @@ function showPasswordGate() {
   const submit = gate.querySelector('#gate-submit');
   const errEl  = gate.querySelector('#gate-error');
 
-  // Force uppercase on every keystroke
-  input.addEventListener('input', () => { input.value = input.value.toUpperCase(); });
+  // Force uppercase + clear error on every keystroke
+  input.addEventListener('input', () => {
+    input.value = input.value.toUpperCase();
+    errEl.classList.add('hidden');
+  });
   input.focus();
 
   async function attempt() {
     const hash = await hashInput(input.value.trim());
     if (hash === PASSWORD_HASH) {
+      sessionAuthenticated = true;
       track('summary/password_correct');
       gate.classList.add('hidden');
       showSummary();
@@ -1385,11 +1397,13 @@ function buildSummaryHTML(predep, arrival, monthly) {
     </div>
     ${buildProfileCard()}
     <div class="phases">
-      ${buildPhaseBlock('📋 Преди заминаване', predep)}
-      ${buildPhaseBlock('✈️ При пристигане',   arrival)}
-      ${buildPhaseBlock('📅 Месечни разходи',  monthly)}
+      ${buildPhaseBlock('📋 Преди заминаване', predep,  'phase--predep')}
+      ${buildPhaseBlock('✈️ При пристигане',   arrival, 'phase--arrival')}
     </div>
     ${isComplexCase() ? buildLazarBlock() : ''}
+    <div class="phases phases--tail">
+      ${buildPhaseBlock('📅 Месечни разходи',  monthly, 'phase--monthly')}
+    </div>
     <div class="summary-footer">
       <p class="disclaimer">Всички суми са ориентировъчни. Препоръчвам ти буфер от 20–30% над изчисленото. Тази калкулация не е финансов съвет.</p>
       <button class="print-btn no-print" id="print-btn">🖨️ Принтирай / Запази като PDF</button>
@@ -1455,7 +1469,7 @@ function buildProfileCard() {
   `;
 }
 
-function buildPhaseBlock(title, calc) {
+function buildPhaseBlock(title, calc, phaseClass) {
   const lineHTML = calc.lines.map(line => {
     const srcLink = line.source_key
       ? ` <a href="${DATA.meta.source_links[line.source_key]}" target="_blank" class="source-link">→ Провери</a>`
@@ -1478,7 +1492,7 @@ function buildPhaseBlock(title, calc) {
   }).join('');
 
   return `
-    <div class="phase">
+    <div class="phase ${phaseClass}">
       <div class="phase-head">
         <h2 class="phase-title">${title}</h2>
         <div class="phase-total">${fmtPhaseTotal(calc.lo, calc.hi)}</div>
