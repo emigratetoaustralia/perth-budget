@@ -71,7 +71,7 @@ function getActiveCards() {
       return state.kindyCount > 0;
     }
     if (key === 'kindy_ccs') {
-      return state.kindyCount > 0 &&
+      return state.kindyCount > 0 && state.kindyDaysPerWeek > 0 &&
              (state.visaKey === 'pr_189' || state.visaKey === 'pr_190');
     }
     if (key === 'partner_english') {
@@ -190,7 +190,7 @@ function cardExchangeRate() {
   const anchor = DATA.meta.currency_anchor_eur_per_aud;
   const hasEur = state.eurPerAud !== null;
   return `
-    ${msg(`Здравей! Аз ще те преведа стъпка по стъпка през всичко, което трябва да знаеш за разходите при преместване в Пърт.<br><br>Всички суми са в австралийски долари (AUD). Искаш ли да виждаш и приблизителните стойности в евро?<br><br><span class="msg-note">Насочващ курс: 1 AUD = ${anchor} EUR (средата на 2026)</span>`)}\
+    ${msg(`Здравей! Аз ще те преведа стъпка по стъпка през всичко, което трябва да знаеш за разходите при преместване в Пърт.<br><br>Всички суми са в австралийски долари (AUD). Искаш ли да виждаш и приблизителните стойности в евро?<br><br><span class="msg-note">Насочващ курс: 1 AUD = ${anchor} EUR (средата на 2026) · <a href="${DATA.meta.source_links.xe_rate}" target="_blank" class="source-link">→ Провери текущия курс</a></span>`)}\
     <div class="card-inputs">
       <div class="choice-group--inline">
         ${choiceBtn('aud', 'Само AUD', !hasEur)}
@@ -277,14 +277,14 @@ function cardHousehold() {
 
 // --- Card 5: Kindy days (conditional: kindyCount > 0) ---
 function cardKindyDays() {
-  const plural  = state.kindyCount > 1 ? 'децата' : 'детето';
-  const days    = state.kindyDaysPerWeek;
-  const labels  = ['1 ден', '2 дни', '3 дни', '4 дни', '5 дни'];
+  const plural = state.kindyCount > 1 ? 'децата' : 'детето';
+  const days   = state.kindyDaysPerWeek;
+  const labels = ['Без градина', '1 ден', '2 дни', '3 дни', '4 дни', '5 дни'];
   return `
     ${msg(`Колко дни в седмицата ще ходи ${plural} на детска градина?`)}\
     <div class="card-inputs">
       <div class="choice-group--inline">
-        ${[1,2,3,4,5].map(d => choiceBtn(String(d), labels[d - 1], days === d)).join('')}
+        ${[0,1,2,3,4,5].map(d => choiceBtn(String(d), labels[d], days === d)).join('')}
       </div>
     </div>
   `;
@@ -963,7 +963,15 @@ function calcPredeparture() {
 
   if (state.visaKey === 'pr_189' || state.visaKey === 'pr_190') {
     const et = DATA.predeparture.english_test;
-    addFixed('Езиков изпит (IELTS / PTE)', et.amount, { note_bg: et.note_bg, source_key: 'visa_fees' });
+    const bothSit = (state.householdType === 'couple' || state.householdType === 'family') &&
+                    state.partnerEnglish === false;
+    if (bothSit) {
+      addFixed('Езиков изпит (IELTS / PTE) — двама кандидати', et.amount * 2,
+        { note_bg: et.note_bg + ' И двамата кандидати трябва да положат изпит — таксата е удвоена.', source_key: 'visa_fees' });
+    } else {
+      addFixed('Езиков изпит (IELTS / PTE)', et.amount,
+        { note_bg: et.note_bg, source_key: 'visa_fees' });
+    }
     const sa = DATA.predeparture.skills_assessment;
     if (state.skillsAssessmentCost !== null) {
       addFixed('Оценка на уменията', state.skillsAssessmentCost,
@@ -1098,35 +1106,42 @@ function calcMonthly() {
       { note_bg: ka.note_bg });
   }
 
-  // Kindy childcare — dynamic: daily rate × days × 4.33
+  // Детска градина — dynamic: daily rate × days × 4.33
   if (state.kindyCount > 0) {
     const k        = DATA.monthly.kindy;
     const days     = state.kindyDaysPerWeek;
-    const dayRate  = state.kindyDailyRate !== null ? state.kindyDailyRate : DATA.ccs.daily_rate_default;
-    const grossPer = Math.round(dayRate * days * 4.33);
     const kWord    = state.kindyCount === 1 ? 'дете' : 'деца';
-    const daysWrd  = days === 1 ? 'ден' : 'дни';
 
-    if (!isPR) {
-      // 482: no CCS, pay full gross
-      const note = `${k.note_bg_482} $${dayRate}/ден × ${days} ${daysWrd} × 4.33 седм. = ~${fmtAUD(grossPer)}/мес. на дете.`;
-      addFixed(`Детска грижа (${state.kindyCount} ${kWord})`,
-        grossPer * state.kindyCount, { note_bg: note });
-    } else if (state.familyIncome !== null) {
-      // PR + income entered: exact CCS calculation
-      const ccs     = calcKindyCcs(dayRate, days, state.familyIncome);
-      const noteStr = ccs.perChildLines.join(' · ') +
-        ` Брутна цена: ~${fmtAUD(grossPer)}/мес. на дете ($${dayRate}/ден × ${days} ${daysWrd}).`;
-      addFixed(`Детска грижа (${state.kindyCount} ${kWord})`,
-        ccs.total, { note_bg: noteStr, source_key: 'ccs_calculator' });
+    if (days === 0) {
+      // Not enrolled — show $0 with context note
+      addFixed(`Детска градина (${state.kindyCount} ${kWord})`, 0,
+        { note_bg: 'Детето не е записано в детска градина. При нужда, планирай около $150/ден при записване.' });
     } else {
-      // PR + income skipped: scaled range
-      const daysRatio = days / 5;
-      const rangeMin  = Math.round(k.perth_aud_net_pr_min_5days * daysRatio) * state.kindyCount;
-      const rangeMax  = Math.round(k.perth_aud_net_pr_max_5days * daysRatio) * state.kindyCount;
-      const noteStr   = `${k.note_bg_pr_range} Брутна цена: ~${fmtAUD(grossPer)}/мес. на дете ($${dayRate}/ден × ${days} ${daysWrd}). Въведи семейния доход за точна сметка.`;
-      addRange(`Детска грижа (${state.kindyCount} ${kWord})`,
-        rangeMin, rangeMax, { note_bg: noteStr, source_key: 'ccs_calculator' });
+      const dayRate  = state.kindyDailyRate !== null ? state.kindyDailyRate : DATA.ccs.daily_rate_default;
+      const grossPer = Math.round(dayRate * days * 4.33);
+      const daysWrd  = days === 1 ? 'ден' : 'дни';
+
+      if (!isPR) {
+        // 482: no CCS, pay full gross
+        const note = `${k.note_bg_482} $${dayRate}/ден × ${days} ${daysWrd} × 4.33 седм. = ~${fmtAUD(grossPer)}/мес. на дете.`;
+        addFixed(`Детска градина (${state.kindyCount} ${kWord})`,
+          grossPer * state.kindyCount, { note_bg: note });
+      } else if (state.familyIncome !== null) {
+        // PR + income entered: exact CCS calculation
+        const ccs     = calcKindyCcs(dayRate, days, state.familyIncome);
+        const noteStr = ccs.perChildLines.join(' · ') +
+          ` Брутна цена: ~${fmtAUD(grossPer)}/мес. на дете ($${dayRate}/ден × ${days} ${daysWrd}).`;
+        addFixed(`Детска градина (${state.kindyCount} ${kWord})`,
+          ccs.total, { note_bg: noteStr, source_key: 'ccs_calculator' });
+      } else {
+        // PR + income skipped: scaled range
+        const daysRatio = days / 5;
+        const rangeMin  = Math.round(k.perth_aud_net_pr_min_5days * daysRatio) * state.kindyCount;
+        const rangeMax  = Math.round(k.perth_aud_net_pr_max_5days * daysRatio) * state.kindyCount;
+        const noteStr   = `${k.note_bg_pr_range} Брутна цена: ~${fmtAUD(grossPer)}/мес. на дете ($${dayRate}/ден × ${days} ${daysWrd}). Въведи семейния доход за точна сметка.`;
+        addRange(`Детска градина (${state.kindyCount} ${kWord})`,
+          rangeMin, rangeMax, { note_bg: noteStr, source_key: 'ccs_calculator' });
+      }
     }
   }
 
@@ -1273,7 +1288,9 @@ function buildProfileCard() {
     { label: 'Виза',           value: visaLabel },
     { label: 'Домакинство',    value: householdMap[state.householdType] || '—' },
     ...(state.kindyCount > 0 ? [{ label: 'Детска градина',
-        value: `${state.kindyCount} ${state.kindyCount === 1 ? 'дете' : 'деца'} · ${state.kindyDaysPerWeek} ${state.kindyDaysPerWeek === 1 ? 'ден' : 'дни'}/седм.` }] : []),
+        value: state.kindyDaysPerWeek === 0
+          ? `${state.kindyCount} ${state.kindyCount === 1 ? 'дете' : 'деца'} · без записване`
+          : `${state.kindyCount} ${state.kindyCount === 1 ? 'дете' : 'деца'} · ${state.kindyDaysPerWeek} ${state.kindyDaysPerWeek === 1 ? 'ден' : 'дни'}/седм.` }] : []),
     { label: 'Транспорт',      value: transportLabel },
     { label: 'При пристигане', value: stayLabel },
     { label: 'Жилище',         value: `${propLabel} — ${locLabel}` },

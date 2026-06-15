@@ -11,7 +11,8 @@
       "dot_licence":      "https://www.transport.wa.gov.au/licensing/get-a-car-licence.asp",
       "revenue_wa_duty":  "https://www.revenue.wa.gov.au/duties/vehicle-licence-duty",
       "transperth":       "https://www.transperth.wa.gov.au/Fares-Tickets/Fares",
-      "ccs_calculator":   "https://startingblocks.gov.au/child-care-subsidy-calculator"
+      "ccs_calculator":   "https://startingblocks.gov.au/child-care-subsidy-calculator",
+      "xe_rate":          "https://www.xe.com/currencyconverter/convert/?Amount=1&From=AUD&To=EUR"
     }
   },
 
@@ -157,8 +158,8 @@
     },
     "kindy": {
       "perth_aud_gross_5days": 3250,
-      "perth_aud_net_pr_min_5days": 600,
-      "perth_aud_net_pr_max_5days": 900,
+      "perth_aud_net_pr_min_5days": 400,
+      "perth_aud_net_pr_max_5days": 1100,
       "note_bg_pr_range": "Ориентировъчен диапазон след CCS субсидия, при медианен семеен доход. Въведи семейния си доход за точна сметка.",
       "note_bg_482": "Притежателите на виза 482 нямат право на CCS субсидия — плащате пълната цена.",
       "source_key": "ccs_calculator"
