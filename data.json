@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": "0.14",
+    "version": "0.15",
     "currency_anchor_eur_per_aud": 0.61,
     "source_links": {
       "visa_fees":        "https://immi.homeaffairs.gov.au/visas/getting-a-visa/fees-and-charges/current-visa-pricing",
@@ -114,12 +114,55 @@
     "bond_weeks": 4,
     "advance_weeks": 2,
     "source_key": "reiwa",
-    "city_premium_note_bg": "Жилищата в крайбрежни и централни квартали (Scarborough, Cottesloe, Fremantle, Subiaco) са средно с около 25% по-скъпи от предградията. Cottesloe е значително над средното, но почти няма предлагане. Ще ти е много трудно да намериш жилище под наем.",
+    "rental_market_note_bg": "Пазарът на наеми в Пърт е изключително конкурентен с остър недостиг на предлагане. Очаквай много кандидати за всеки обявен имот — препоръчваме финансов буфер и готовност за бързи решения.",
     "types": {
-      "unit":      { "label_bg": "Апартамент / юнит",  "weekly_suburbs": 680, "weekly_city": 850 },
-      "townhouse": { "label_bg": "Таунхаус",            "weekly_suburbs": 720, "weekly_city": 900 },
-      "house_3br": { "label_bg": "Къща с 3 спални",    "weekly_suburbs": 750, "weekly_city": 950 },
-      "house_4br": { "label_bg": "Къща с 4 спални",    "weekly_suburbs": 820, "weekly_city": 1050 }
+      "unit": {
+        "label_bg": "Апартамент / юнит",
+        "weekly_suburbs": 680,
+        "weekly_city": 850,
+        "note_bg": "Апартаментите и юнитите са твърде фрагментиран пазар за надеждни зонови данни — използваме общ медиан за предградия и за крайбрежие/център."
+      },
+      "townhouse": {
+        "label_bg": "Таунхаус",
+        "weekly_suburbs": 720,
+        "weekly_city": 900,
+        "note_bg": "Предлагането на таунхауси в Пърт е много ограничено. Данните са ориентировъчни — пазарът е твърде тесен за надеждни зонови оценки. Готви се за засилена конкуренция."
+      },
+      "house_3br": { "label_bg": "Къща с 3 спални" },
+      "house_4br": { "label_bg": "Къща с 4 спални" }
+    },
+    "zones": {
+      "inner_central": {
+        "label_bg": "Вътрешен център",
+        "suburbs_bg": "Subiaco, Leederville, Mt Lawley, East Perth",
+        "house_3br": { "weekly_min": 800, "weekly_max": 1050 },
+        "house_4br": { "weekly_min": 1000, "weekly_max": 1300 }
+      },
+      "coastal": {
+        "label_bg": "Крайбрежие",
+        "suburbs_bg": "Scarborough, Fremantle, Coogee",
+        "note_bg": "Cottesloe е значително по-скъп от останалите крайбрежни квартали ($1,200–$1,500+/седм. за 3-стайна) и почти няма свободни имоти.",
+        "house_3br": { "weekly_min": 750, "weekly_max": 1100 },
+        "house_4br": { "weekly_min": 950, "weekly_max": 1500 }
+      },
+      "mid_ring": {
+        "label_bg": "Средна зона",
+        "suburbs_bg": "Victoria Park, Maylands, South Perth, Como",
+        "house_3br": { "weekly_min": 650, "weekly_max": 900 },
+        "house_4br": { "weekly_min": 850, "weekly_max": 1100 }
+      },
+      "outer_affordable": {
+        "label_bg": "Достъпни предградия",
+        "suburbs_bg": "Armadale, Baldivis, Clarkson, Wanneroo",
+        "house_3br": { "weekly_min": 580, "weekly_max": 750 },
+        "house_4br": { "weekly_min": 620, "weekly_max": 850 }
+      },
+      "outer_satellite": {
+        "label_bg": "Отдалечени предградия",
+        "suburbs_bg": "Joondalup, Ellenbrook, Rockingham, Alkimos",
+        "house_3br": { "weekly_min": 600, "weekly_max": 780 },
+        "house_4br": { "weekly_min": 650, "weekly_max": 900 }
+      }
     }
   },
 

@@ -462,12 +462,33 @@ function cardPropertyType() {
 
 // --- Card 13: Location ---
 function cardLocation() {
+  const isHouse = state.propertyType === 'house_3br' || state.propertyType === 'house_4br';
+  const mkt     = DATA.housing.rental_market_note_bg;
+
+  if (!isHouse) {
+    const t = DATA.housing.types[state.propertyType];
+    return `
+      ${msg(`Последен въпрос! В кой район на Пърт планираш да живееш?<br><br><span class="msg-note">${t.note_bg}<br><br>${mkt}</span>`)}\
+      <div class="card-inputs">
+        <div class="choice-group--inline">
+          ${choiceBtn('suburbs', 'Предградия',          state.location === 'suburbs')}
+          ${choiceBtn('city',    'Център / Крайбрежие', state.location === 'city')}
+        </div>
+      </div>
+    `;
+  }
+
+  const zones    = DATA.housing.zones;
+  const zoneList = Object.values(zones)
+    .map(z => `· ${z.label_bg}: ${z.suburbs_bg}`)
+    .join('<br>');
   return `
-    ${msg(`Последен въпрос! Как си представяш живота в Пърт?<br><br><span class="msg-note">${DATA.housing.city_premium_note_bg}</span>`)}\
+    ${msg(`Последен въпрос! В коя зона на Пърт искаш да живееш?<br><br><span class="msg-note">${zoneList}<br><br>${mkt}</span>`)}\
     <div class="card-inputs">
-      <div class="choice-group--inline">
-        ${choiceBtn('suburbs', 'Предградия',          state.location === 'suburbs')}
-        ${choiceBtn('city',    'Център / Крайбрежие', state.location === 'city')}
+      <div class="choice-group">
+        ${Object.entries(zones).map(([key, z]) =>
+          choiceBtn(key, z.label_bg, state.location === key)
+        ).join('')}
       </div>
     </div>
   `;
@@ -1022,11 +1043,13 @@ function calcArrival() {
       { note_bg: DATA.arrival.temp_accommodation.note_bg });
   }
 
-  const wkRent = getWeeklyRent();
-  addFixed(`Депозит (${DATA.housing.bond_weeks} седмици)`,
-    wkRent * DATA.housing.bond_weeks, { source_key: 'reiwa' });
-  addFixed(`Авансов наем (${DATA.housing.advance_weeks} седмици)`,
-    wkRent * DATA.housing.advance_weeks, { source_key: 'reiwa' });
+  const wk = getWeeklyRent();
+  addRange(`Депозит (${DATA.housing.bond_weeks} седмици)`,
+    wk.min * DATA.housing.bond_weeks, wk.max * DATA.housing.bond_weeks,
+    { source_key: 'reiwa', note_bg: DATA.housing.rental_market_note_bg });
+  addRange(`Авансов наем (${DATA.housing.advance_weeks} седмици)`,
+    wk.min * DATA.housing.advance_weeks, wk.max * DATA.housing.advance_weeks,
+    { source_key: 'reiwa' });
 
   if (state.transport === 'car') {
     const v    = DATA.arrival.vehicle;
@@ -1068,7 +1091,18 @@ function calcMonthly() {
     lo += min; hi += max;
   }
 
-  addFixed('Наем', Math.round(getWeeklyRent() * 4.33), { source_key: 'reiwa' });
+  const wk      = getWeeklyRent();
+  const isHouse = state.propertyType === 'house_3br' || state.propertyType === 'house_4br';
+  let rentNote  = DATA.housing.rental_market_note_bg;
+  if (isHouse) {
+    const zoneNote = DATA.housing.zones[state.location]?.note_bg;
+    if (zoneNote) rentNote += ' ' + zoneNote;
+  } else {
+    const typeNote = DATA.housing.types[state.propertyType]?.note_bg;
+    if (typeNote) rentNote += ' ' + typeNote;
+  }
+  addRange('Наем', Math.round(wk.min * 4.33), Math.round(wk.max * 4.33),
+    { source_key: 'reiwa', note_bg: rentNote });
   addFixed('Хранителни стоки', calcGroceries(n), { note_bg: DATA.monthly.groceries.note_bg });
   addFixed('Сметки (ток, вода, интернет)',
     DATA.monthly.utilities.base + Math.max(0, n - 1) * DATA.monthly.utilities.per_extra_person,
@@ -1174,8 +1208,14 @@ function getFamilySize() {
 }
 
 function getWeeklyRent() {
-  const h = DATA.housing.types[state.propertyType];
-  return state.location === 'city' ? h.weekly_city : h.weekly_suburbs;
+  const isHouse = state.propertyType === 'house_3br' || state.propertyType === 'house_4br';
+  if (!isHouse) {
+    const h  = DATA.housing.types[state.propertyType];
+    const wk = state.location === 'city' ? h.weekly_city : h.weekly_suburbs;
+    return { min: wk, max: wk };
+  }
+  const z = DATA.housing.zones[state.location];
+  return { min: z[state.propertyType].weekly_min, max: z[state.propertyType].weekly_max };
 }
 
 function calcGroceries(n) {
@@ -1280,7 +1320,13 @@ function buildProfileCard() {
     ? `Кола${state.vehicleCost ? ' ($' + state.vehicleCost.toLocaleString() + ')' : ' ($14,000 ориентир)'}`
     : 'Обществен транспорт';
   const propLabel = DATA.housing.types[state.propertyType]?.label_bg || '—';
-  const locLabel  = state.location === 'city' ? 'Център / Крайбрежие' : 'Предградия';
+  function getLocationLabel() {
+    if (state.location === 'city')    return 'Център / Крайбрежие';
+    if (state.location === 'suburbs') return 'Предградия';
+    const z = DATA.housing.zones[state.location];
+    return z ? `${z.label_bg} (${z.suburbs_bg})` : state.location;
+  }
+  const locLabel  = getLocationLabel();
   const stayLabel = state.stayingWithFamily ? 'При приятели / семейство' : 'Временно жилище';
   const eurLabel  = state.eurPerAud ? `AUD + EUR (1 AUD = ${state.eurPerAud} EUR)` : 'Само AUD';
 
