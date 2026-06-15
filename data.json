@@ -5,12 +5,12 @@
     "source_links": {
       "visa_fees":        "https://immi.homeaffairs.gov.au/visas/getting-a-visa/fees-and-charges/current-visa-pricing",
       "skills_assessment":"https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list",
-      "wa_nomination":    "https://www.wa.gov.au/government/document-collections/skilled-migration-wa",
+      "wa_nomination":    "https://migration.wa.gov.au/moving-western-australia/migration-pathways-skilled-visas",
       "reiwa":            "https://reiwa.com.au/the-wa-market/",
-      "ovhc":             "https://www.allianzcare.com.au/en/individuals/overseas-health-cover.html",
-      "dot_licence":      "https://www.transport.wa.gov.au/licensing/get-a-car-licence.asp",
-      "revenue_wa_duty":  "https://www.revenue.wa.gov.au/duties/vehicle-licence-duty",
-      "transperth":       "https://www.transperth.wa.gov.au/Fares-Tickets/Fares",
+      "ovhc":             "https://www.allianzcare.com.au/en/visas/visitors-visa-ovhc/compare.html",
+      "dot_licence":      "https://www.transport.wa.gov.au/licensing/drivers-licence/get-a-licence/car",
+      "revenue_wa_duty":  "https://www.wa.gov.au/organisation/department-of-treasury-and-finance/vehicle-licence-duty",
+      "transperth":       "https://www.transperth.wa.gov.au/tickets-fares/fares",
       "ccs_calculator":   "https://startingblocks.gov.au/child-care-subsidy-calculator"
     }
   },
