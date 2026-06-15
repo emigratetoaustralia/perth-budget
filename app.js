@@ -432,7 +432,7 @@ function cardTransport() {
 // --- Card 11: Staying with family ---
 function cardStayingWithFamily() {
   return `
-    ${msg('Как планираш първите седмици в Пърт след пристигането?')}\
+    ${msg('Къде планираш да останеш първите седмици след пристигането в Пърт?')}\
     <div class="card-inputs">
       <div class="choice-group--inline">
         ${choiceBtn('temp',   'Наемам временно жилище',     state.stayingWithFamily === false)}
@@ -497,7 +497,7 @@ function cardLocation() {
 // --- Card 14: Summary trigger ---
 function cardSummaryTrigger() {
   return `
-    ${msg('Перфектно — имам всичко, което ми трябва. Готов ли си да видиш пълното резюме на разходите?')}\
+    ${msg('Перфектно — имам всичко, което ми трябва. Искаш ли да видиш пълното резюме на разходите?')}\
     <div class="card-inputs">
       <button class="primary-btn" id="show-summary">Покажи резюмето →</button>
     </div>
@@ -1294,7 +1294,7 @@ function buildSummaryHTML(predep, arrival, monthly) {
       ${buildPhaseBlock('📅 Месечни разходи',  monthly)}
     </div>
     <div class="summary-footer">
-      <p class="disclaimer">Всички суми са ориентировъчни. Препоръчваме буфер от 20–30% над изчисленото. Тази калкулация не е финансов съвет.</p>
+      <p class="disclaimer">Всички суми са ориентировъчни. Препоръчвам ти буфер от 20–30% над изчисленото. Тази калкулация не е финансов съвет.</p>
       <button class="restart-btn" id="restart-btn">← Започни отначало</button>
     </div>
   `;
