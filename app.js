@@ -11,7 +11,6 @@ let DATA = null;
 const state = {
   visaKey:              null,
   householdType:        null,
-  adultCount:           1,
   childCount:           0,    // derived: kindyCount + schoolCount
   kindyCount:           0,    // children 0-4 yrs
   schoolCount:          0,    // children 5-18 yrs
@@ -55,7 +54,6 @@ function isComplexCase() {
 
 // ============================================================
 // 3c. PASSWORD GATE (SHA-256, Web Crypto API)
-// Password: MONEY-PERTH12
 // ============================================================
 const PASSWORD_HASH = '2f51a508d42c5572649cc42ebe9ec8704aff916cf78dc6534dbe26c7c0bbd4c8';
 
@@ -212,6 +210,12 @@ function choiceBtn(value, label, selected) {
   return `<button class="choice-btn${selected ? ' choice-btn--selected' : ''}" data-value="${value}">${label}</button>`;
 }
 
+// Continue button shown on auto-advance cards when the user returns via back-nav
+// (state already holds a value). Lets them proceed without re-selecting.
+function continueBtn(show, id) {
+  return show ? `<button class="primary-btn" id="${id}">Продължи →</button>` : '';
+}
+
 // --- Card 1: Exchange rate ---
 function cardExchangeRate() {
   const anchor = DATA.meta.currency_anchor_eur_per_aud;
@@ -256,6 +260,7 @@ function cardVisaType() {
       <div class="choice-group">
         ${DATA.visa.options.map(o => choiceBtn(o.key, o.label_bg, state.visaKey === o.key)).join('')}
       </div>
+      ${continueBtn(state.visaKey !== null, 'visa-confirm')}
     </div>
   `;
 }
@@ -271,6 +276,8 @@ function cardHousehold() {
         ${choiceBtn('couple', 'Аз и партньорът ми', state.householdType === 'couple')}
         ${choiceBtn('family', 'Семейство с деца',   state.householdType === 'family')}
       </div>
+      ${(state.householdType === 'solo' || state.householdType === 'couple')
+        ? continueBtn(true, 'household-simple-confirm') : ''}
       ${isFamily ? `
         <div class="child-counters">
           <div class="child-counter">
@@ -313,6 +320,7 @@ function cardKindyDays() {
       <div class="choice-group kindy-days-group">
         ${[0,1,2,3,4,5].map(d => choiceBtn(String(d), labels[d], days === d)).join('')}
       </div>
+      <button class="primary-btn" id="kindy-days-confirm">Продължи →</button>
     </div>
   `;
 }
@@ -360,7 +368,7 @@ function cardKindyCcs() {
 function cardPartnerEnglish() {
   const si = DATA.visa.second_instalment;
   return `
-    ${msg(`Важен въпрос за партньора ти: има ли валиден резултат от езиков изпит (IELTS или PTE)?<br><br>Ако не — правителството изисква задължителна втора вноска от <strong>$${si.amount.toLocaleString()} AUD</strong> към визата.`)}\
+    ${msg(`Важен въпрос за партньора ти: има ли валиден резултат от езиков изпит (IELTS или PTE)?<br><br>Ако не — правителството изисква задължителна втора вноска от <strong>$${si.amount.toLocaleString('en-AU')} AUD</strong> към визата.`)}\
     <div class="card-inputs">
       <div class="choice-group--inline">
         ${choiceBtn('yes', 'Да, има / ще се яви', state.partnerEnglish === true)}
@@ -407,7 +415,7 @@ function cardFlightsInput() {
   const pWord = n === 1 ? 'човек' : 'души';
   const known = state.flightsCost !== null;
   return `
-    ${msg(`Самолетните билети. За ${n} ${pWord} от София до Пърт, ориентировъчно е между <strong>$${fMin.toLocaleString()}</strong> и <strong>$${fMax.toLocaleString()} AUD</strong>.<br><br>${f.note_bg}`)}\
+    ${msg(`Самолетните билети. За ${n} ${pWord} от София до Пърт, ориентировъчно е между <strong>$${fMin.toLocaleString('en-AU')}</strong> и <strong>$${fMax.toLocaleString('en-AU')} AUD</strong>.<br><br>${f.note_bg}`)}\
     <div class="card-inputs">
       <p class="input-label">${f.input_prompt_bg}</p>
       <div class="choice-group--inline">
@@ -437,10 +445,11 @@ function cardTransport() {
         ${choiceBtn('car',        'Купувам кола',        state.transport === 'car')}
         ${choiceBtn('transperth', 'Обществен транспорт', state.transport === 'transperth')}
       </div>
+      ${state.transport === 'transperth' ? continueBtn(true, 'transport-transperth-confirm') : ''}
       ${isCar ? `
         <p class="input-label">${v.input_prompt_bg}</p>
         <div class="choice-group--inline">
-          ${choiceBtn('default', `Не — използвай $${v.default_cost.toLocaleString()}`, !known)}
+          ${choiceBtn('default', `Не — използвай $${v.default_cost.toLocaleString('en-AU')}`, !known)}
           ${choiceBtn('custom',  'Да — въведи бюджета',                                  known)}
         </div>
         <div id="vehicle-input-row" class="input-row${known ? '' : ' hidden'}">
@@ -469,6 +478,7 @@ function cardStayingWithFamily() {
         ? `<div class="info-note">Страхотно — ще махнем разходите за временно жилище. Депозитът и авансовият наем за постоянния ти дом са все още включени в резюмето.</div>
            <button class="primary-btn" id="staying-confirm">Продължи →</button>`
         : ''}
+      ${state.stayingWithFamily === false ? continueBtn(true, 'staying-temp-confirm') : ''}
     </div>
   `;
 }
@@ -483,6 +493,7 @@ function cardPropertyType() {
           choiceBtn(key, val.label_bg, state.propertyType === key)
         ).join('')}
       </div>
+      ${continueBtn(state.propertyType !== null, 'property-confirm')}
     </div>
   `;
 }
@@ -501,6 +512,7 @@ function cardLocation() {
           ${choiceBtn('suburbs', 'Предградия',          state.location === 'suburbs')}
           ${choiceBtn('city',    'Център / Крайбрежие', state.location === 'city')}
         </div>
+        ${continueBtn(state.location !== null, 'location-confirm')}
       </div>
     `;
   }
@@ -517,6 +529,7 @@ function cardLocation() {
           choiceBtn(key, z.label_bg, state.location === key)
         ).join('')}
       </div>
+      ${continueBtn(state.location !== null, 'location-confirm')}
     </div>
   `;
 }
@@ -607,6 +620,8 @@ function bindVisaType(el) {
       goForward(getNextCard('visa_type'));
     });
   });
+  el.querySelector('#visa-confirm')?.addEventListener('click', () =>
+    goForward(getNextCard('visa_type')));
 }
 
 function bindHousehold(el) {
@@ -615,17 +630,14 @@ function bindHousehold(el) {
       const val = btn.dataset.value;
       state.householdType = val;
       if (val === 'solo') {
-        state.adultCount = 1;
         state.kindyCount = 0; state.schoolCount = 0; state.childCount = 0;
         track('household/solo');
         goForward(getNextCard('household'));
       } else if (val === 'couple') {
-        state.adultCount = 2;
         state.kindyCount = 0; state.schoolCount = 0; state.childCount = 0;
         track('household/couple');
         goForward(getNextCard('household'));
       } else {
-        state.adultCount = 2;
         if (state.kindyCount + state.schoolCount < 1) state.schoolCount = 1;
         const cur = document.getElementById('card-current');
         cur.innerHTML = cardHousehold();
@@ -661,15 +673,22 @@ function bindHousehold(el) {
     track('household/family_kindy_' + state.kindyCount + '_school_' + state.schoolCount);
     goForward(getNextCard('household'));
   });
+  el.querySelector('#household-simple-confirm')?.addEventListener('click', () =>
+    goForward(getNextCard('household')));
 }
 
 function bindKindyDays(el) {
   el.querySelectorAll('.choice-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       state.kindyDaysPerWeek = parseInt(btn.dataset.value, 10);
-      track('kindy_days/' + state.kindyDaysPerWeek);
-      goForward(getNextCard('kindy_days'));
+      // Reflect selection without advancing — user confirms with the button
+      el.querySelectorAll('.choice-btn').forEach(b =>
+        b.classList.toggle('choice-btn--selected', b === btn));
     });
+  });
+  el.querySelector('#kindy-days-confirm')?.addEventListener('click', () => {
+    track('kindy_days/' + state.kindyDaysPerWeek);
+    goForward(getNextCard('kindy_days'));
   });
 }
 
@@ -875,6 +894,8 @@ function bindTransport(el) {
   });
   const vehicleInput = el.querySelector('#vehicle-cost-input');
   if (vehicleInput) vehicleInput.addEventListener('keydown', e => { if (e.key === 'Enter') el.querySelector('#transport-confirm')?.click(); });
+  el.querySelector('#transport-transperth-confirm')?.addEventListener('click', () =>
+    goForward(getNextCard('transport')));
 }
 
 function bindStayingWithFamily(el) {
@@ -895,6 +916,8 @@ function bindStayingWithFamily(el) {
   });
   el.querySelector('#staying-confirm')?.addEventListener('click', () =>
     goForward(getNextCard('staying_with_family')));
+  el.querySelector('#staying-temp-confirm')?.addEventListener('click', () =>
+    goForward(getNextCard('staying_with_family')));
 }
 
 function bindPropertyType(el) {
@@ -905,6 +928,8 @@ function bindPropertyType(el) {
       goForward(getNextCard('property_type'));
     });
   });
+  el.querySelector('#property-confirm')?.addEventListener('click', () =>
+    goForward(getNextCard('property_type')));
 }
 
 function bindLocation(el) {
@@ -915,6 +940,8 @@ function bindLocation(el) {
       goForward(getNextCard('location'));
     });
   });
+  el.querySelector('#location-confirm')?.addEventListener('click', () =>
+    goForward(getNextCard('location')));
 }
 
 function bindSummaryTrigger(el) {
@@ -1264,9 +1291,22 @@ function calcGroceries(n) {
 }
 
 function calcStampDuty(price) {
-  if (price <= 25000) return Math.round(price * 0.0275);
-  if (price <= 50000) return Math.round(688 + ((price - 25000) / 25000) * (3250 - 688));
-  return Math.round(price * 0.065);
+  // Brackets from DATA.arrival.vehicle.duty_brackets.
+  // Tier 1 (≤$25k): flat rate. Tier 2 (≤$50k): sliding — linear from tier-1
+  // ceiling up to the tier-3 rate at $50k. Tier 3 (>$50k): flat rate.
+  const b      = DATA.arrival.vehicle.duty_brackets;
+  const t1Max  = b[0].max, t1Rate = b[0].rate;          // 25000, 0.0275
+  const t2Max  = b[1].max;                               // 50000
+  const t3Rate = b[2].rate;                              // 0.065
+
+  if (price <= t1Max) return Math.round(price * t1Rate);
+  if (price <= t2Max) {
+    const dutyAtT1Ceiling = t1Max * t1Rate;             // 688
+    const dutyAtT2Ceiling = t2Max * t3Rate;             // 3250
+    const frac = (price - t1Max) / (t2Max - t1Max);
+    return Math.round(dutyAtT1Ceiling + frac * (dutyAtT2Ceiling - dutyAtT1Ceiling));
+  }
+  return Math.round(price * t3Rate);
 }
 
 function fmtAUD(n) {
@@ -1429,7 +1469,7 @@ function buildProfileCard() {
   };
 
   const transportLabel = state.transport === 'car'
-    ? `Кола${state.vehicleCost ? ' ($' + state.vehicleCost.toLocaleString() + ')' : ' ($14,000 ориентир)'}`
+    ? `Кола${state.vehicleCost ? ' ($' + state.vehicleCost.toLocaleString('en-AU') + ')' : ' ($14,000 ориентир)'}`
     : 'Обществен транспорт';
   const propLabel = DATA.housing.types[state.propertyType]?.label_bg || '—';
   function getLocationLabel() {
@@ -1516,7 +1556,7 @@ function buildLazarBlock() {
 // ============================================================
 function resetApp() {
   Object.assign(state, {
-    visaKey: null, householdType: null, adultCount: 1,
+    visaKey: null, householdType: null,
     childCount: 0, kindyCount: 0, schoolCount: 0,
     kindyDaysPerWeek: 5, kindyDailyRate: null, familyIncome: null,
     partnerEnglish: null,
