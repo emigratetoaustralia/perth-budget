@@ -1,13 +1,13 @@
 {
   "name": "Бюджет Пърт",
   "short_name": "БюджетПърт",
-  "description": "Сравни разходите си в България и Пърт, Австралия",
+  "description": "Изчисли разходите за живот в Пърт, Австралия — преди заминаване, при пристигане и месечно",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0252a3",
-  "theme_color": "#0252a3",
+  "background_color": "#1A4E6E",
+  "theme_color": "#1A4E6E",
   "lang": "bg",
   "icons": [
     {

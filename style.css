@@ -333,6 +333,48 @@ button { font-family: inherit; cursor: pointer; }
   text-align: center;
 }
 
+/* Two-counter wrapper — stacks the kindy and school counters */
+.child-counters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Label + age hint stacked vertically inside each counter */
+.counter-label-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.counter-age {
+  font-size: 0.8125rem;
+  color: var(--fog);
+  font-family: var(--font-body);
+}
+
+/* ============================================================
+   KINDY DAYS GRID (Card 5 — 6 buttons)
+   2×3 on narrow, 1×6 at 400px+
+   ============================================================ */
+.kindy-days-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.kindy-days-group .choice-btn {
+  text-align: center;
+  padding: 14px 4px;
+  font-size: 0.875rem;
+}
+
+@media (min-width: 400px) {
+  .kindy-days-group {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
 /* ============================================================
    INFO NOTE
    ============================================================ */

@@ -310,7 +310,7 @@ function cardKindyDays() {
   return `
     ${msg(`Колко дни в седмицата ще ходи ${plural} на детска градина?`)}\
     <div class="card-inputs">
-      <div class="choice-group--inline">
+      <div class="choice-group kindy-days-group">
         ${[0,1,2,3,4,5].map(d => choiceBtn(String(d), labels[d], days === d)).join('')}
       </div>
     </div>
