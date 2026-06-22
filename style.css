@@ -916,39 +916,32 @@ button { font-family: inherit; cursor: pointer; }
    ============================================================ */
 
 .line {
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-5);
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .line:last-child { border-bottom: none; }
 
+/* Mobile: stack label above amount so text never approaches the curved edge */
 .line-head {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .line-label {
   font-size: var(--fs-body-sm);
   font-weight: 500;
   color: var(--fg-secondary);
-  flex: 1 1 55%;
-  min-width: 0;
   line-height: var(--lh-normal);
 }
 
 .line-amount {
   font-family: var(--font-display);
-  font-size: var(--fs-caption);
+  font-size: var(--fs-body-sm);
   font-weight: 700;
   color: var(--fg-primary);
-  text-align: right;
-  flex: 0 0 auto;
-  max-width: 100%;
   line-height: var(--lh-normal);
-  word-break: break-word;
 }
 
 .eur {
@@ -1288,7 +1281,15 @@ button { font-family: inherit; cursor: pointer; }
   }
   .phase-total { font-size: var(--fs-h4); text-align: right; flex-shrink: 0; }
   .line { padding: var(--space-4) var(--space-6); }
-  .line-amount { font-size: var(--fs-body-sm); }
+  /* Restore side-by-side layout on tablet+ */
+  .line-head {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+  .line-label { flex: 1; min-width: 0; }
+  .line-amount { flex-shrink: 0; text-align: right; }
   .summary-footer { padding: var(--space-5) var(--space-6) 0; }
   .lazar-block { padding: 0 var(--space-6) var(--space-5); }
 }
