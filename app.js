@@ -1591,7 +1591,36 @@ async function init() {
   }
 }
 
+// ============================================================
+// 11. THEME TOGGLE
+// ============================================================
+function initThemeToggle() {
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+
+  function getEffectiveTheme() {
+    const stored = localStorage.getItem('ea-theme');
+    if (stored === 'dark' || stored === 'light') return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('ea-theme', theme);
+    btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    btn.setAttribute('aria-label', theme === 'dark' ? 'Светла тема' : 'Тъмна тема');
+  }
+
+  applyTheme(getEffectiveTheme());
+
+  btn.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || getEffectiveTheme();
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('back-btn').addEventListener('click', goBack);
+  initThemeToggle();
   init();
 });

@@ -103,9 +103,10 @@
   --dur-base:  200ms;
   --ease-out:  cubic-bezier(0.0, 0.0, 0.2, 1);
 
-  /* PWA shell */
-  --pwa-max-width:   640px;
-  --pwa-content-px:  var(--space-5);
+  /* Shell layout */
+  --pwa-max-width:       1100px;  /* desktop cap */
+  --pwa-column-width:    640px;   /* single-column content cap */
+  --pwa-content-px:      var(--space-5);
 }
 
 /* ----------------------------------------------------------
@@ -234,6 +235,8 @@ button { font-family: inherit; cursor: pointer; }
   margin: 0 auto;
 }
 
+/* On desktop: wizard top bar spans full shell width */
+
 #wizard-top {
   display: flex;
   align-items: center;
@@ -244,6 +247,31 @@ button { font-family: inherit; cursor: pointer; }
   z-index: 10;
   background: var(--bg-page);
   border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--fg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1;
+}
+
+.theme-toggle:hover {
+  background: var(--bg-inset);
+  border-color: var(--border-strong);
 }
 
 /* ============================================================
@@ -312,6 +340,17 @@ button { font-family: inherit; cursor: pointer; }
   align-items: center;
   gap: var(--space-5);
   padding: var(--space-6) var(--pwa-content-px) 80px;
+}
+
+/* Desktop: card content gets its own generous padding */
+@media (min-width: 900px) {
+  .card {
+    padding: var(--space-9) var(--space-8) 80px;
+  }
+  .msg-bubble,
+  .card-inputs {
+    max-width: 620px;
+  }
 }
 
 /* ============================================================
@@ -694,6 +733,34 @@ button { font-family: inherit; cursor: pointer; }
   overflow-y: auto;
   max-width: var(--pwa-max-width);
   margin: 0 auto;
+}
+
+/* Desktop summary: 2-column layout for phases */
+@media (min-width: 900px) {
+  .summary-header,
+  .profile-card,
+  .lazar-block,
+  .summary-footer {
+    max-width: var(--pwa-max-width);
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+
+  .phases {
+    max-width: var(--pwa-max-width);
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  /* Monthly phase spans full width */
+  .phases--tail {
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 .summary-header {
@@ -1174,7 +1241,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 /* ============================================================
-   RESPONSIVE — 640px+
+   RESPONSIVE — 640px+  (tablet)
    ============================================================ */
 
 @media (min-width: 640px) {
@@ -1187,7 +1254,7 @@ button { font-family: inherit; cursor: pointer; }
     min-height: 56px;
   }
   .card {
-    padding: var(--space-7) var(--space-6) 80px;
+    padding: var(--space-7) var(--space-7) 80px;
   }
   .summary-header {
     padding: var(--space-9) var(--space-6) var(--space-5);
@@ -1206,4 +1273,24 @@ button { font-family: inherit; cursor: pointer; }
   .line { padding: var(--space-4) var(--space-6); }
   .summary-footer { padding: var(--space-5) var(--space-6) 0; }
   .lazar-block { padding: 0 var(--space-6) var(--space-5); }
+}
+
+/* ============================================================
+   RESPONSIVE — 900px+  (desktop)
+   ============================================================ */
+
+@media (min-width: 900px) {
+  #wizard-top {
+    padding: var(--space-4) var(--space-8) var(--space-3);
+  }
+  .summary-header {
+    padding: var(--space-9) var(--space-8) var(--space-5);
+  }
+  .summary-title { font-size: var(--fs-h1); }
+  .phase-head {
+    padding: var(--space-5) var(--space-7) var(--space-4);
+  }
+  .line { padding: var(--space-4) var(--space-7); }
+  .summary-footer { padding: var(--space-6) var(--space-8) 0; }
+  .lazar-block { padding: 0 var(--space-8) var(--space-5); }
 }
