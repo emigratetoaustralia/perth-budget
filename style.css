@@ -922,11 +922,15 @@ button { font-family: inherit; cursor: pointer; }
 
 .line:last-child { border-bottom: none; }
 
-/* Mobile: stack label above amount so text never approaches the curved edge */
+/* Label left, amount right — consistent at every width.
+   The amount wraps its own text into the right column when long,
+   but never drops under the label. */
 .line-head {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .line-label {
@@ -934,6 +938,8 @@ button { font-family: inherit; cursor: pointer; }
   font-weight: 500;
   color: var(--fg-secondary);
   line-height: var(--lh-normal);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .line-amount {
@@ -942,6 +948,9 @@ button { font-family: inherit; cursor: pointer; }
   font-weight: 700;
   color: var(--fg-primary);
   line-height: var(--lh-normal);
+  text-align: right;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .eur {
@@ -1281,15 +1290,6 @@ button { font-family: inherit; cursor: pointer; }
   }
   .phase-total { font-size: var(--fs-h4); text-align: right; flex-shrink: 0; }
   .line { padding: var(--space-4) var(--space-6); }
-  /* Restore side-by-side layout on tablet+ */
-  .line-head {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--space-3);
-  }
-  .line-label { flex: 1; min-width: 0; }
-  .line-amount { flex-shrink: 0; text-align: right; }
   .summary-footer { padding: var(--space-5) var(--space-6) 0; }
   .lazar-block { padding: 0 var(--space-6) var(--space-5); }
 }
