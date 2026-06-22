@@ -1360,7 +1360,7 @@ function showPasswordGate() {
   gate.className = '';
   gate.innerHTML = `
     <div class="gate-inner">
-      <div class="gate-logo">🔐</div>
+      <img src="icons/EA.png" alt="Емигрирай в Австралия" class="gate-logo-img">
       <h1 class="gate-title">Резюмето е готово</h1>
       <p class="gate-sub">За достъп до резюмето ти трябва парола. Намери я в статията на Патреон.</p>
       <a href="https://www.patreon.com/emigratetoaustralia/posts/kolko-pari-predi-161126612"
