@@ -740,36 +740,9 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--bg-page);
   padding-bottom: 80px;
   overflow-y: auto;
-  max-width: var(--pwa-max-width);
+  /* Comfortable reading column, centred — every block is the same width */
+  max-width: var(--pwa-column-width);
   margin: 0 auto;
-}
-
-/* Desktop summary: 2-column layout for phases */
-@media (min-width: 900px) {
-  .summary-header,
-  .profile-card,
-  .lazar-block,
-  .summary-footer {
-    max-width: var(--pwa-max-width);
-    padding-left: var(--space-8);
-    padding-right: var(--space-8);
-  }
-
-  .phases {
-    max-width: var(--pwa-max-width);
-    padding-left: var(--space-8);
-    padding-right: var(--space-8);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-5);
-    align-items: start;
-  }
-
-  /* Monthly phase spans full width */
-  .phases--tail {
-    display: flex;
-    flex-direction: column;
-  }
 }
 
 .summary-header {
@@ -1299,17 +1272,9 @@ button { font-family: inherit; cursor: pointer; }
    ============================================================ */
 
 @media (min-width: 900px) {
+  /* Wizard shell stays full desktop width; summary keeps its
+     centred reading column so all phase blocks remain equal size. */
   #wizard-top {
     padding: var(--space-4) var(--space-8) var(--space-3);
   }
-  .summary-header {
-    padding: var(--space-9) var(--space-8) var(--space-5);
-  }
-  .summary-title { font-size: var(--fs-h1); }
-  .phase-head {
-    padding: var(--space-5) var(--space-7) var(--space-4);
-  }
-  .line { padding: var(--space-4) var(--space-7); }
-  .summary-footer { padding: var(--space-6) var(--space-8) 0; }
-  .lazar-block { padding: 0 var(--space-8) var(--space-5); }
 }
