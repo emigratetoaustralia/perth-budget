@@ -249,6 +249,15 @@ button { font-family: inherit; cursor: pointer; }
   border-bottom: 1px solid var(--border-subtle);
 }
 
+/* Top-bar logo */
+.top-bar-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 /* Theme toggle button */
 .theme-toggle {
   flex-shrink: 0;
@@ -1114,9 +1123,12 @@ button { font-family: inherit; cursor: pointer; }
   text-align: center;
 }
 
-.gate-logo {
-  font-size: 2.5rem;
-  line-height: 1;
+.gate-logo-img {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+  box-shadow: var(--shadow-md);
 }
 
 .gate-title {

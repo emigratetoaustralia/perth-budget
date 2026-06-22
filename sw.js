@@ -1,11 +1,12 @@
-const CACHE  = 'perth-budget-v20';
+const CACHE  = 'perth-budget-v21';
 const ASSETS = [
   '/',
   '/index.html',
   '/app.js',
   '/style.css',
   '/data.json',
-  '/manifest.json'
+  '/manifest.json',
+  '/icons/EA.png'
 ];
 
 self.addEventListener('install', e => {
