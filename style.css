@@ -235,17 +235,35 @@ button { font-family: inherit; cursor: pointer; }
   margin: 0 auto;
 }
 
-/* On desktop: wizard top bar spans full shell width */
+/* Top bar — full viewport width, two-row layout */
 
 #wizard-top {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--pwa-content-px) var(--space-3);
   position: sticky;
   top: 0;
   z-index: 10;
+  width: 100%;
   background: var(--brand-orange);
+  padding: var(--space-3) var(--pwa-content-px) var(--space-3);
+  box-sizing: border-box;
+}
+
+#wizard-top-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+#app-title {
+  flex: 1 1 auto;
+  font-family: var(--font-display);
+  font-size: var(--fs-body-sm);
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Top-bar logo */
@@ -1274,6 +1292,6 @@ button { font-family: inherit; cursor: pointer; }
   /* Wizard shell stays full desktop width; summary keeps its
      centred reading column so all phase blocks remain equal size. */
   #wizard-top {
-    padding: var(--space-4) var(--space-8) var(--space-3);
+    padding: var(--space-3) var(--space-8) var(--space-3);
   }
 }
