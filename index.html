@@ -22,15 +22,18 @@
 
   <!-- Top bar (outside wizard-container so it spans full viewport width) -->
   <div id="wizard-top">
-    <div id="wizard-top-row">
-      <button id="back-btn" class="back-btn" aria-label="Назад" style="visibility:hidden">←</button>
-      <img src="icons/EA.png" alt="Емигрирай в Австралия" class="top-bar-logo">
+    <button id="back-btn" class="back-btn" aria-label="Назад" style="visibility:hidden">←</button>
+    <img src="icons/EA.png" alt="EA" class="top-bar-logo">
+    <div id="top-bar-text">
       <span id="app-title">Perth Budget</span>
-      <button id="theme-toggle" class="theme-toggle" aria-label="Превключи тема"></button>
+      <span id="app-subtitle">Емигрирай в Австралия</span>
     </div>
-    <div id="progress-bar" role="progressbar" aria-label="Напредък">
-      <div id="progress-fill"></div>
-    </div>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Превключи тема"></button>
+  </div>
+
+  <!-- Progress bar below the orange bar, on page background -->
+  <div id="progress-bar" role="progressbar" aria-label="Напредък">
+    <div id="progress-fill"></div>
   </div>
 
   <!-- Wizard -->
