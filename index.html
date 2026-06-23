@@ -20,16 +20,21 @@
 </head>
 <body>
 
-  <!-- Wizard -->
-  <div id="wizard-container">
-    <div id="wizard-top">
+  <!-- Top bar (outside wizard-container so it spans full viewport width) -->
+  <div id="wizard-top">
+    <div id="wizard-top-row">
       <button id="back-btn" class="back-btn" aria-label="Назад" style="visibility:hidden">←</button>
       <img src="icons/EA.png" alt="Емигрирай в Австралия" class="top-bar-logo">
-      <div id="progress-bar" role="progressbar" aria-label="Напредък">
-        <div id="progress-fill"></div>
-      </div>
+      <span id="app-title">Perth Budget</span>
       <button id="theme-toggle" class="theme-toggle" aria-label="Превключи тема"></button>
     </div>
+    <div id="progress-bar" role="progressbar" aria-label="Напредък">
+      <div id="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- Wizard -->
+  <div id="wizard-container">
     <div id="card-viewport">
       <div id="card-current" class="card"></div>
     </div>
