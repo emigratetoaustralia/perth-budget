@@ -245,8 +245,7 @@ button { font-family: inherit; cursor: pointer; }
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--bg-page);
-  border-bottom: 1px solid var(--border-subtle);
+  background: var(--brand-orange);
 }
 
 /* Top-bar logo */
@@ -264,9 +263,9 @@ button { font-family: inherit; cursor: pointer; }
   width: 36px;
   height: 36px;
   border-radius: var(--radius-pill);
-  border: 1.5px solid var(--border-default);
-  background: var(--bg-surface);
-  color: var(--fg-secondary);
+  border: 1.5px solid rgba(255,255,255,0.50);
+  background: transparent;
+  color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -279,8 +278,8 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 .theme-toggle:hover {
-  background: var(--bg-inset);
-  border-color: var(--border-strong);
+  background: rgba(255,255,255,0.18);
+  border-color: rgba(255,255,255,0.80);
 }
 
 /* ============================================================
@@ -293,7 +292,7 @@ button { font-family: inherit; cursor: pointer; }
   border: none;
   font-size: var(--fs-body);
   line-height: 1;
-  color: var(--fg-secondary);
+  color: #FFFFFF;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-pill);
   transition: background var(--dur-fast) var(--ease-out),
@@ -302,8 +301,8 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 .back-btn:hover {
-  background: var(--bg-inset);
-  color: var(--fg-primary);
+  background: rgba(255,255,255,0.18);
+  color: #FFFFFF;
 }
 
 /* ============================================================
@@ -313,14 +312,14 @@ button { font-family: inherit; cursor: pointer; }
 #progress-bar {
   flex: 1;
   height: 4px;
-  background: var(--border-subtle);
+  background: rgba(255,255,255,0.30);
   border-radius: var(--radius-pill);
   overflow: hidden;
 }
 
 #progress-fill {
   height: 100%;
-  background: var(--brand-orange);
+  background: #FFFFFF;
   border-radius: var(--radius-pill);
   width: 0%;
   transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
