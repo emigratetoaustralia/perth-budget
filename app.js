@@ -176,7 +176,7 @@ function updateProgress() {
   const fill = document.getElementById('progress-fill');
   if (fill) fill.style.width = (getCurrentProgress() * 100) + '%';
   const back = document.getElementById('back-btn');
-  if (back) back.style.visibility = cardHistory.length > 0 ? 'visible' : 'hidden';
+  if (back) back.style.display = cardHistory.length > 0 ? 'flex' : 'none';
 }
 
 // ============================================================
